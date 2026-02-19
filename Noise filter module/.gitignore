@@ -1,0 +1,20 @@
+# Environment variables
+.env
+
+# Python compilation
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.venv/
+
+# Testing
+.pytest_cache/
+test_output*.txt
+
+# Build output
+demo_output.txt
+
+# Dataset (large files)
+emails.csv/
