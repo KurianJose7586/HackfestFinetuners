@@ -123,11 +123,18 @@ def main():
     print(f"  → {len(chunks)} raw chunks parsed")
     print(f"  → {len(unique_chunks)} unique chunks after content deduplication\n")
     chunks = unique_chunks
-    # -----------------------------------------------------------------------
+    # Initialize the database
+    from storage import init_db, store_chunks
+    init_db()
+    print("AKS Database initialized.")
 
     print("Classifying chunks...")
     classified = classify_chunks(chunks, api_key=api_key)
     print(f"  → Done. {len(classified)} chunks classified.\n")
+    
+    print("Writing chunks to AKS Database...")
+    store_chunks(classified)
+    print("  → Done. Chunks saved to PostgreSQL.\n")
 
     print_pipeline_breakdown(classified)
     print_confidence_distribution(classified)
