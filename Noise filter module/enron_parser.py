@@ -130,10 +130,8 @@ def load_emails(csv_path: str | Path, n: Optional[int] = None) -> pd.DataFrame:
             except Exception:
                 return {}
 
-        # Parse messages
-        # print("Parsing raw email content...") < removed
-        # Apply row-wise. For large datasets this is slow, but for demo (n=50) it's fine.
-        parsed = df["message"].apply(parse_raw).apply(pd.Series)
+        # Parse messages — build DataFrame from list of dicts (faster than .apply(pd.Series))
+        parsed = pd.DataFrame(df["message"].apply(parse_raw).tolist())
         
         # Combine
         df = pd.concat([df, parsed], axis=1)
@@ -154,21 +152,24 @@ def parse_to_chunks(csv_path: str | Path, n: Optional[int] = None) -> list[dict]
     """
     df = load_emails(csv_path, n=n)
     df = deduplicate(df)
+    # Rename columns with hyphens for itertuples() compatibility
+    df = df.rename(columns={"X-From": "X_From", "Message-ID": "Message_ID"})
 
     chunks = []
 
-    for i, row in df.iterrows():
-        raw_body = str(row.get("body", "") or "")
-        subject = str(row.get("Subject", "") or "")
-        speaker = str(row.get("X-From", "") or row.get("From", "") or "")
-        source_ref = str(row.get("Message-ID", "") or "")
+    # itertuples() is 5-10× faster than iterrows() (avoids pd.Series per row)
+    for row in df.itertuples(index=True):
+        i = row.Index
+        raw_body = str(getattr(row, "body", "") or "")
+        subject = str(getattr(row, "Subject", "") or "")
+        speaker = str(getattr(row, "X_From", "") or getattr(row, "From", "") or "")
+        source_ref = str(getattr(row, "Message_ID", "") or "")
 
         # Use Message-ID as source_ref or fallback
         if not source_ref:
             source_ref = f"row_{i}"
 
         # Combine subject + body so subject line is also classified
-        # Be careful not to double-count subject if it's already in body? Usually not.
         full_text = f"Subject: {subject}\n\n{raw_body}" if subject else raw_body
 
         # Flatten thread into sub-chunks
@@ -176,11 +177,7 @@ def parse_to_chunks(csv_path: str | Path, n: Optional[int] = None) -> list[dict]
 
         for sub in sub_chunks:
             cleaned = strip_boilerplate(sub)
-            if not cleaned:
-                continue
-            
-            # Additional heuristic: filter empty lines
-            if not cleaned.strip():
+            if not cleaned or not cleaned.strip():
                 continue
 
             chunks.append(

@@ -50,3 +50,5 @@ start-backend.ps1.backup
 # Dataset (large files)
 emails.csv
 emails.csv/
+emails.csv
+

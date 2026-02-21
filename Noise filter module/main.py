@@ -6,8 +6,11 @@ Runs the full pipeline: parse Enron CSV → classify → print summary.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import sys
+import time
+import uuid
 from collections import Counter
 from pathlib import Path
 
@@ -25,7 +28,7 @@ from enron_parser import parse_to_chunks
 # ---------------------------------------------------------------------------
 
 CSV_PATH = _HERE / "emails.csv" / "emails.csv"
-N_EMAILS = 200  # number of emails to process in demo mode
+N_EMAILS = 500  # number of emails to process in demo mode
 
 def print_confidence_distribution(classified):
     llm_items = [c for c in classified 
@@ -67,8 +70,9 @@ def print_pipeline_breakdown(classified):
                  if c.reasoning == "Classified by heuristic rule."]
     domain_gate = [c for c in classified 
                    if c.reasoning == "No project-relevant domain terms detected."]
-    llm_path = [c for c in classified 
-                if c not in heuristic and c not in domain_gate]
+    # Use id-based sets for O(1) membership instead of O(n) list scan
+    _seen = {id(c) for c in heuristic} | {id(c) for c in domain_gate}
+    llm_path = [c for c in classified if id(c) not in _seen]
     
     print("\n--- PIPELINE PATH BREAKDOWN ---")
     print(f"  Heuristic (fast path):     {len(heuristic):>4}")
@@ -99,6 +103,7 @@ def inspect_flagged_items(classified):
 
 
 def main():
+    _t0 = time.perf_counter()
     api_key = os.getenv("GROQ_CLOUD_API")
     if not api_key:
         print("ERROR: GROQ_CLOUD_API not set in .env")
@@ -110,7 +115,6 @@ def main():
     # -----------------------------------------------------------------------
     # Content-Level Deduplication
     # -----------------------------------------------------------------------
-    import hashlib
     seen_hashes = set()
     unique_chunks = []
     for c in chunks:
@@ -129,11 +133,12 @@ def main():
     print("AKS Database initialized.")
 
     print("Classifying chunks...")
+    _t_cls = time.perf_counter()
     classified = classify_chunks(chunks, api_key=api_key)
-    print(f"  → Done. {len(classified)} chunks classified.\n")
+    print(f"  → Done. {len(classified)} chunks classified in {time.perf_counter() - _t_cls:.1f}s\n")
     
     # --- Integration Point for BRD Pipeline ---
-    import uuid
+
     
     print("\n--- Saving Chunks for BRD Pipeline ---")
     session_id = str(uuid.uuid4())
@@ -200,6 +205,10 @@ def main():
         print(f"Text: {c.cleaned_text[:200]}")
         print(f"Reasoning: {c.reasoning}")
         print(f"Speaker: {c.speaker}")
+
+    print(f"\n{'='*50}")
+    print(f"Total pipeline time: {time.perf_counter() - _t0:.1f}s")
+    print(f"{'='*50}")
 
 
 if __name__ == "__main__":

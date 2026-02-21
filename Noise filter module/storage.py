@@ -10,7 +10,7 @@ import os
 from typing import List
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, execute_values
 
 from schema import ClassifiedChunk, SignalLabel
 
@@ -124,8 +124,8 @@ def store_chunks(chunks: List[ClassifiedChunk]):
                 INSERT INTO classified_chunks (
                     chunk_id, session_id, source_ref, label, suppressed, 
                     manually_restored, flagged_for_review, created_at, data
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (chunk_id) DO NOTHING;
+                ) VALUES %s
+                ON CONFLICT (chunk_id) DO NOTHING
             """
             
             values = []
@@ -144,7 +144,8 @@ def store_chunks(chunks: List[ClassifiedChunk]):
                     json.dumps(data_json)
                 ))
                 
-            cur.executemany(insert_query, values)
+            # Single multi-row INSERT instead of one INSERT per row
+            execute_values(cur, insert_query, values)
         conn.commit()
     finally:
         conn.close()
