@@ -1,10 +1,20 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
 import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
 import slack_auth
 import pdf
 from state import user_credentials
 from models import SlackSelectedItemsRequest
+
+# Load environment variables - ensure we look in the parent directory for .env
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+# Add 'Noise filter module' directory to sys.path
+sys.path.append(str(Path(__file__).parent.parent.parent / "Noise filter module"))
+from integration_pipeline import process_external_content
 
 router = APIRouter(prefix="/slack", tags=["Slack"])
 
@@ -142,7 +152,7 @@ def slack_process_selected(request: SlackSelectedItemsRequest):
         messages = slack_auth.get_channel_messages(token, request.channel_id)
         selected_msgs = [m for m in messages if m.get("ts") in request.message_ids]
         
-        chunks = []
+        processed_count = 0
         user_cache = {}
         
         for msg in selected_msgs:
@@ -152,32 +162,48 @@ def slack_process_selected(request: SlackSelectedItemsRequest):
                 user_cache[user_id] = user_info.get("real_name", user_id) if user_info else user_id
             
             speaker = user_cache.get(user_id, user_id) if user_id else "Unknown"
-            
             cleaned_text = slack_auth.strip_slack_formatting(msg.get("text", ""))
-            chunks.append({
-                "source_ref": msg["ts"],
-                "speaker": speaker,
-                "raw_text": msg.get("text", ""),
-                "cleaned_text": cleaned_text,
-                "subject": f"Slack Message in {request.channel_id}"
-            })
             
+            # Process main Slack message
+            try:
+                process_external_content(
+                    text=cleaned_text,
+                    speaker=speaker,
+                    source_ref=msg["ts"],
+                    subject=f"Slack Message in {request.channel_id}",
+                    source_type="slack",
+                    session_id=request.session_id
+                )
+                processed_count += 1
+            except Exception as e:
+                print(f"Error processing Slack message {msg['ts']}: {e}")
+            
+            # Process PDF files attached to Slack message
             if "files" in msg:
                 for f in msg["files"]:
                     if f.get("filetype") == "pdf" or f.get("name", "").lower().endswith(".pdf"):
-                        pdf_url = f.get("url_private_download")
-                        if pdf_url:
-                            pdf_data = slack_auth.download_slack_file(token, pdf_url)
-                            extracted_text = pdf.extract_text_from_pdf_bytes(pdf_data)
-                            if extracted_text:
-                                chunks.append({
-                                    "source_ref": f"{msg['ts']}_{f.get('name')}",
-                                    "speaker": speaker,
-                                    "raw_text": f"Slack PDF File: {f.get('name')}\n{extracted_text}",
-                                    "cleaned_text": extracted_text,
-                                    "subject": f"Slack File in {request.channel_id}"
-                                })
+                        try:
+                            pdf_url = f.get("url_private_download")
+                            if pdf_url:
+                                pdf_data = slack_auth.download_slack_file(token, pdf_url)
+                                extracted_text = pdf.extract_text_from_pdf_bytes(pdf_data)
+                                if extracted_text:
+                                    process_external_content(
+                                        text=extracted_text,
+                                        speaker=speaker,
+                                        source_ref=f"{msg['ts']}_{f.get('name')}",
+                                        subject=f"Slack File in {request.channel_id}",
+                                        source_type="document",
+                                        session_id=request.session_id
+                                    )
+                                    processed_count += 1
+                        except Exception as e:
+                            print(f"Error processing Slack file {f.get('name')} in message {msg['ts']}: {e}")
                                 
-        return {"count": len(chunks), "chunks": chunks}
+        return {
+            "status": "success",
+            "processed_items_count": processed_count,
+            "session_id": request.session_id or "new_session_created"
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
