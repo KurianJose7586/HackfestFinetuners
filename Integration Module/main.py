@@ -1,15 +1,15 @@
-import os
 from fastapi import FastAPI
 from dotenv import load_dotenv
 import uvicorn
+import os
+
+# Load environment variables FIRST
+load_dotenv()
 
 # Import routers
 from routes.gmail_routes import router as gmail_router
 from routes.slack_routes import router as slack_router
 from routes.pdf_routes import router as pdf_router
-
-# Load environment variables
-load_dotenv()
 
 app = FastAPI(title="Integration Module API")
 

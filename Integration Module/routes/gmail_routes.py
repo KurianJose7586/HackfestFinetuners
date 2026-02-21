@@ -3,14 +3,24 @@ from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
 import gmail
 import pdf
 from state import user_credentials
 from models import SelectedItemsRequest
 
+# Load environment variables - ensure we look in the parent directory for .env
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+# Add 'Noise filter module' directory to sys.path
+sys.path.append(str(Path(__file__).parent.parent.parent / "Noise filter module"))
+from integration_pipeline import process_external_content
+
 router = APIRouter(prefix="/gmail", tags=["Gmail"])
 
-# Configuration
+# Configuration - use getenv directly here to avoid stale values if module is imported early
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -249,32 +259,47 @@ def gmail_process_selected(request: SelectedItemsRequest):
     credentials = Credentials(**creds_data)
     try:
         service = gmail.get_gmail_service(credentials)
-        chunks = []
-        
+        processed_count = 0
         for msg_id in request.message_ids:
             email_data = gmail.get_email_details(service, msg_id)
             
-            chunks.append({
-                "source_ref": msg_id,
-                "speaker": email_data["from"],
-                "raw_text": email_data["body"],
-                "cleaned_text": email_data["body"],
-                "subject": email_data["subject"]
-            })
+            # Process main email body
+            try:
+                process_external_content(
+                    text=email_data["body"],
+                    speaker=email_data["from"],
+                    source_ref=msg_id,
+                    subject=email_data["subject"],
+                    source_type="email",
+                    session_id=request.session_id
+                )
+                processed_count += 1
+            except Exception as e:
+                print(f"Error processing email {msg_id}: {e}")
             
+            # Process PDF attachments
             for att in email_data["attachments"]:
                 if att["filename"].lower().endswith(".pdf"):
-                    pdf_data = gmail.download_attachment(service, msg_id, att["attachment_id"])
-                    extracted_text = pdf.extract_text_from_pdf_bytes(pdf_data)
-                    if extracted_text:
-                        chunks.append({
-                            "source_ref": f"{msg_id}_{att['filename']}",
-                            "speaker": email_data["from"],
-                            "raw_text": f"PDF Attachment: {att['filename']}\n{extracted_text}",
-                            "cleaned_text": extracted_text,
-                            "subject": email_data["subject"]
-                        })
+                    try:
+                        pdf_data = gmail.download_attachment(service, msg_id, att["attachment_id"])
+                        extracted_text = pdf.extract_text_from_pdf_bytes(pdf_data)
+                        if extracted_text:
+                            process_external_content(
+                                text=extracted_text,
+                                speaker=email_data["from"],
+                                source_ref=f"{msg_id}_{att['filename']}",
+                                subject=email_data["subject"],
+                                source_type="document",
+                                session_id=request.session_id
+                            )
+                            processed_count += 1
+                    except Exception as e:
+                        print(f"Error processing attachment {att['filename']} in email {msg_id}: {e}")
                         
-        return {"count": len(chunks), "chunks": chunks}
+        return {
+            "status": "success",
+            "processed_items_count": processed_count,
+            "session_id": request.session_id or "new_session_created"
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
