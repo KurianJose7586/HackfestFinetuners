@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sys
@@ -10,16 +11,23 @@ from .routers import sessions, ingest, review, brd
 from integration_module.routes import gmail_routes, slack_routes, pdf_routes
 from brd_module.storage import init_db
 
-# Initialize database (PG or SQLite fallback) on startup
-try:
-    init_db()
-except Exception as e:
-    print(f"Warning: Database initialization failed: {e}")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database (PG or SQLite fallback) AFTER uvicorn has bound the port
+    try:
+        init_db()
+        print("Database initialized successfully.")
+    except Exception as e:
+        print(f"Warning: Database initialization failed: {e}")
+    yield  # App runs here
+
 
 app = FastAPI(
     title="BRD Generation API",
     description="API for the Attributed Knowledge Store and BRD Generation Pipeline",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Allow frontend testing
