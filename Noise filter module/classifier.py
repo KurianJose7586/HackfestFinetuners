@@ -100,6 +100,30 @@ _SOCIAL_NOISE = re.compile(
     re.IGNORECASE,
 )
 
+# Meeting-specific logistics (transcripts)
+_MEETING_LOGISTICS = re.compile(
+    r"(?:shall we|let's take a break|let's continue|"
+    r"break|coffee|toilet|meeting ends|"
+    r"right then|okay then|um|uh|er|like|"
+    r"you know|sort of|kind of)",
+    re.IGNORECASE,
+)
+
+# Pure crosstalk / unintelligible (always noise)
+_CROSSTALK = re.compile(
+    r"(?:\[crosstalk\]|\[laughter\]|\[inaudible\]|"
+    r"\[pause\]|\[silence\]|\[break\]|"
+    r"cross talk|background noise)",
+    re.IGNORECASE,
+)
+
+# Multi-speaker disagreement (potential signal)
+_DISAGREEMENT = re.compile(
+    r"(?:\bno\b|\bdisagree\b|\bwon't\b|\bdon't think\b|"
+    r"but I\b|\bnot sure\b|\bhave to disagree\b)",
+    re.IGNORECASE,
+)
+
 _MIN_WORD_COUNT = 4  # Very short chunks are usually noise unless they contain keywords
 
 
@@ -115,20 +139,30 @@ def apply_heuristics(chunk: dict) -> Optional[str]:
     speaker = chunk.get("speaker", "")
     word_count = len(text.split())
 
-    # System-generated mail
+    # System-generated mail (email specific)
     if _SYSTEM_MAIL_PATTERNS.search(text) or _SYSTEM_MAIL_PATTERNS.search(speaker):
+        return "noise"
+
+    # Pure crosstalk / unintelligible (meeting-specific) — always noise
+    if _CROSSTALK.search(text):
         return "noise"
 
     # Pure social noise (short & generic)
     if word_count < 10 and _SOCIAL_NOISE.match(text.strip()):
         return "noise"
+    
+    # Meeting logistics + filler — noise if short
+    if _MEETING_LOGISTICS.search(text):
+        if word_count < 30:
+            if not _PROJECT_TIMELINE.search(text):
+                return "noise"
         
-    # Strict Meeting patterns -> Always Noise (e.g. "dial-in details")
+    # Strict Meeting patterns → Always Noise (e.g. "dial-in details")
     if _STRICT_MEETING.search(text):
          if not _PROJECT_TIMELINE.search(text):
             return "noise"
 
-    # Weak Meeting patterns -> Noise ONLY if short (< 50 words)
+    # Weak Meeting patterns → Noise ONLY if short (< 50 words)
     # This prevents killing "Let's discuss the requirements in the meeting on Monday..."
     if _WEAK_MEETING.search(text):
         if word_count < 50:
@@ -140,7 +174,7 @@ def apply_heuristics(chunk: dict) -> Optional[str]:
     if word_count < _MIN_WORD_COUNT:
         return "noise"
 
-    # Project deadlines -> Timeline
+    # Project deadlines → Timeline
     if _PROJECT_TIMELINE.search(text):
         return "timeline_reference"
 
