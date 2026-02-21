@@ -3,12 +3,14 @@ import re
 from googleapiclient.discovery import build
 
 def strip_html_tags(text):
-    """Remove HTML tags, CSS, and all newline characters, returning a single line of text."""
+    """Remove HTML tags, CSS, URLs and all newline characters, returning a single line of text."""
     # Remove style and script tags and their content
     text = re.sub(r'<(style|script)[^>]*>.*?</\1>', ' ', text, flags=re.DOTALL | re.IGNORECASE)
     # Remove remaining tags
     clean = re.compile('<.*?>', flags=re.DOTALL)
     text = re.sub(clean, ' ', text)
+    # Remove URLs (http, https, www)
+    text = re.sub(r'https?://\S+|www\.\S+', ' ', text)
     # Replace newlines and carriage returns with spaces
     text = text.replace('\n', ' ').replace('\r', ' ')
     # Normalize whitespace: replace multiple spaces with a single space

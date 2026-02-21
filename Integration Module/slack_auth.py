@@ -1,7 +1,43 @@
 import os
+import re
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from dotenv import load_dotenv
+import requests
+
+def download_slack_file(token: str, url: str):
+    """
+    Downloads a private file from Slack using the provided token.
+    """
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.content
+    else:
+        raise Exception(f"Failed to download Slack file: {response.status_code} {response.text}")
+
+def strip_slack_formatting(text):
+    """Remove Slack mentions, channel links, URLs, and simplify formatting."""
+    if not text:
+        return ""
+    # Remove user mentions <@U123...>
+    text = re.sub(r'<@U[A-Z0-9]+>', '', text)
+    # Remove channel links <#C123...|name> -> name
+    text = re.sub(r'<#[A-Z0-9]+\|([^>]+)>', r'\1', text)
+    # Remove channel mentions <#C123...>
+    text = re.sub(r'<#[A-Z0-9]+>', '', text)
+    # Remove special mentions <!here>, <!channel>, etc.
+    text = re.sub(r'<![a-z]+>', '', text)
+    # Simplify links with text <http...|text> -> text
+    text = re.sub(r'<https?://[^|> ]+\|([^>]+)>', r'\1', text)
+    # Remove raw URLs <http...>
+    text = re.sub(r'<https?://[^> ]+>', '', text)
+    # Remove standard URLs (not in brackets)
+    text = re.sub(r'https?://\S+|www\.\S+', '', text)
+    # Normalize whitespace
+    text = text.replace('\n', ' ').replace('\r', ' ')
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
 
 load_dotenv()
 

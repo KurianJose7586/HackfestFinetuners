@@ -155,6 +155,29 @@ def slack_messages(channel_id: str):
                     user_info = slack_auth.get_user_info(token, user_id)
                     user_cache[user_id] = user_info.get("real_name", user_id) if user_info else user_id
                 msg["user_name"] = user_cache[user_id]
+            
+            # Apply regex cleaning to Slack message text
+            msg["text"] = slack_auth.strip_slack_formatting(msg.get("text", ""))
+            
+            # Process files to find PDFs
+            msg["parsed_pdfs"] = []
+            if "files" in msg:
+                for f in msg["files"]:
+                    if f.get("filetype") == "pdf" or f.get("name", "").lower().endswith(".pdf"):
+                        try:
+                            # Download PDF content
+                            pdf_url = f.get("url_private_download")
+                            if pdf_url:
+                                pdf_data = slack_auth.download_slack_file(token, pdf_url)
+                                # Extract text
+                                extracted_text = pdf.extract_text_from_pdf_bytes(pdf_data)
+                                msg["parsed_pdfs"].append({
+                                    "name": f.get("name"),
+                                    "extracted_text": extracted_text
+                                })
+                        except Exception as e:
+                            print(f"Error parsing Slack PDF {f.get('name')}: {e}")
+            
             processed_messages.append(msg)
             
         return {
@@ -209,6 +232,7 @@ def slack_post(channel_id: str, text: str):
         raise HTTPException(status_code=500, detail=f"Failed to post Slack message: {str(e)}")
 
 import gmail
+import pdf
 
 @app.get("/gmail/check")
 def gmail_check(count: int = 1):
@@ -229,12 +253,28 @@ def gmail_check(count: int = 1):
         emails = []
         for msg in messages:
             email_data = gmail.get_email_details(service, msg["id"])
+            
+            # Process attachments to find PDFs
+            processed_attachments = []
+            for att in email_data["attachments"]:
+                att_info = att.copy()
+                if att["filename"].lower().endswith(".pdf"):
+                    try:
+                        # Fetch the attachment content
+                        pdf_data = gmail.download_attachment(service, msg["id"], att["attachment_id"])
+                        # Extract text
+                        extracted_text = pdf.extract_text_from_pdf_bytes(pdf_data)
+                        att_info["extracted_text"] = extracted_text
+                    except Exception as e:
+                        att_info["extraction_error"] = str(e)
+                processed_attachments.append(att_info)
+
             emails.append({
                 "subject": email_data["subject"],
                 "from": email_data["from"],
                 "body": email_data["body"],
                 "message_id": email_data["message_id"],
-                "attachments": email_data["attachments"]
+                "attachments": processed_attachments
             })
             
         return {
