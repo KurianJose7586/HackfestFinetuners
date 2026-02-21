@@ -314,20 +314,40 @@ def store_brd_section(session_id: str, snapshot_id: str, section_name: str, cont
 
 def get_latest_brd_sections(session_id: str) -> Dict[str, str]:
     """Returns the latest generated content for each section name in a session."""
-    conn = get_connection()
+    conn, db_type = get_connection()
     sections = {}
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT section_name, content 
-                FROM brd_sections 
-                WHERE session_id = %s
-                ORDER BY version_number DESC
-            """, (session_id,))
-            rows = cur.fetchall()
-            for r in rows:
-                if r['section_name'] not in sections:
-                    sections[r['section_name']] = r['content']
+        cur = conn.cursor()
+        if db_type == "postgres":
+            from psycopg2.extras import RealDictCursor
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            
+        cur.execute("""
+            SELECT section_name, content 
+            FROM brd_sections 
+            WHERE session_id = %s
+            ORDER BY version_number DESC
+        """, (session_id,))
+        rows = cur.fetchall()
+        for r in rows:
+            # Handle both dict-like and tuple-like row access
+            name = r['section_name'] if isinstance(r, dict) else r[0]
+            content = r['content'] if isinstance(r, dict) else r[1]
+            if name not in sections:
+                sections[name] = content
     finally:
         conn.close()
     return sections
+
+def get_current_snapshot_id(session_id: str) -> str:
+    """Helper to get the most recent snapshot ID for a session."""
+    conn, db_type = get_connection()
+    try:
+        cur = conn.cursor()
+        query = "SELECT snapshot_id FROM brd_sections WHERE session_id = %s ORDER BY version_number DESC LIMIT 1"
+        if db_type == "sqlite": query = query.replace("%s", "?")
+        cur.execute(query, (session_id,))
+        row = cur.fetchone()
+        return row[0] if row else "adhoc-snapshot"
+    finally:
+        conn.close()

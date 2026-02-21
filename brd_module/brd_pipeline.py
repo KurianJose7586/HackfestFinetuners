@@ -18,6 +18,7 @@ load_dotenv(_HERE / ".env")
 
 from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
 from brd_module.storage import create_snapshot, get_signals_for_snapshot, store_brd_section
+from brd_module.hitl.versioned_ledger import is_section_locked, get_section_content, create_new_version
 
 def call_llm_with_retry(client: Groq, messages: List[Dict[str, str]], json_mode: bool = False, max_tokens: int = 2048) -> str:
     """Rate limit handler reusing the exact same retry logic from classifier.py."""
@@ -55,16 +56,18 @@ def call_llm_with_retry(client: Groq, messages: List[Dict[str, str]], json_mode:
             
     raise Exception("Max retries exceeded")
 
-def functional_requirements_agent(session_id: str, snapshot_id: str, client: Groq = None) -> str:
+def functional_requirements_agent(session_id: str, snapshot_id: str, client: Groq = None, additional_context: str = "") -> str:
+    if is_section_locked(session_id, 'functional_requirements') and not additional_context:
+        return get_section_content(session_id, 'functional_requirements')
     if client is None:
         client = Groq(api_key=os.environ.get("GROQ_CLOUD_API", ""))
         
     reqs = get_signals_for_snapshot(snapshot_id, label_filter='requirement')
     
-    if not reqs:
+    if not reqs and not additional_context:
         # Explicit missing data handling
         placeholder = "Insufficient data to generate this section. No requirement signals were found in the provided sources."
-        store_brd_section(session_id, snapshot_id, 'functional_requirements', placeholder, [])
+        create_new_version(session_id, None, 'functional_requirements', placeholder, 'system', snapshot_id=snapshot_id)
         return placeholder
         
     source_ids = [c.chunk_id for c in reqs]
@@ -85,6 +88,13 @@ Instructions:
 Output ONLY the final markdown content for this section. Do not wrap in markdown code blocks.
 """
 
+    if additional_context:
+        prompt_text += f"\nADDITIONAL USER INSTRUCTION: {additional_context}\n"
+        prompt_text += "Please apply this instruction while generating the section.\n"
+        current_content = get_section_content(session_id, 'functional_requirements')
+        if current_content:
+            prompt_text += f"\nCURRENT SECTION CONTENT (for reference/transformation):\n{current_content}\n"
+
     messages = [
         {"role": "system", "content": "You are a senior business analyst writing formal software requirements."},
         {"role": "user", "content": prompt_text}
@@ -95,10 +105,12 @@ Output ONLY the final markdown content for this section. Do not wrap in markdown
     except Exception as e:
         content = f"Error generating functional requirements: {e}"
         
-    store_brd_section(session_id, snapshot_id, 'functional_requirements', content, source_ids)
+    create_new_version(session_id, None, 'functional_requirements', content, 'system', snapshot_id=snapshot_id)
     return content
 
-def stakeholder_analysis_agent(session_id: str, snapshot_id: str, client: Groq = None) -> str:
+def stakeholder_analysis_agent(session_id: str, snapshot_id: str, client: Groq = None, additional_context: str = "") -> str:
+    if is_section_locked(session_id, 'stakeholder_analysis') and not additional_context:
+        return get_section_content(session_id, 'stakeholder_analysis')
     if client is None:
         client = Groq(api_key=os.environ.get("GROQ_CLOUD_API", ""))
         
@@ -115,9 +127,9 @@ def stakeholder_analysis_agent(session_id: str, snapshot_id: str, client: Groq =
             
     unique_speakers = [s for s in speakers.keys() if s and s.lower() != 'unknown' and s.strip() != '']
     
-    if len(unique_speakers) < 2:
+    if len(unique_speakers) < 2 and not additional_context:
         placeholder = "Insufficient data to generate this section. Fewer than 2 unique stakeholders were identified in the source communications."
-        store_brd_section(session_id, snapshot_id, 'stakeholder_analysis', placeholder, [])
+        create_new_version(session_id, None, 'stakeholder_analysis', placeholder, 'system', snapshot_id=snapshot_id)
         return placeholder
         
     source_ids = [c.chunk_id for c in feedback_chunks]
@@ -145,6 +157,12 @@ Instructions:
 Output ONLY the final markdown content for this section. Do not wrap in markdown code blocks.
 """
 
+    if additional_context:
+        prompt_text += f"\nADDITIONAL USER INSTRUCTION: {additional_context}\n"
+        current_content = get_section_content(session_id, 'stakeholder_analysis')
+        if current_content:
+            prompt_text += f"\nCURRENT SECTION CONTENT:\n{current_content}\n"
+
     messages = [
         {"role": "system", "content": "You are a senior business analyst writing formal stakeholder analysis."},
         {"role": "user", "content": prompt_text}
@@ -155,7 +173,7 @@ Output ONLY the final markdown content for this section. Do not wrap in markdown
     except Exception as e:
         content = f"Error generating stakeholder analysis: {e}"
         
-    store_brd_section(session_id, snapshot_id, 'stakeholder_analysis', content, source_ids)
+    create_new_version(session_id, None, 'stakeholder_analysis', content, 'system', snapshot_id=snapshot_id)
     return content
 
 def timeline_agent(session_id: str, snapshot_id: str, client: Groq = None) -> str:
@@ -198,18 +216,20 @@ Output ONLY the final markdown content for this section. Do not wrap in markdown
     except Exception as e:
         content = f"Error generating timeline: {e}"
         
-    store_brd_section(session_id, snapshot_id, 'timeline', content, source_ids)
+    create_new_version(session_id, None, 'timeline', content, 'system', snapshot_id=snapshot_id)
     return content
 
-def decisions_agent(session_id: str, snapshot_id: str, client: Groq = None) -> str:
+def decisions_agent(session_id: str, snapshot_id: str, client: Groq = None, additional_context: str = "") -> str:
+    if is_section_locked(session_id, 'decisions') and not additional_context:
+        return get_section_content(session_id, 'decisions')
     if client is None:
         client = Groq(api_key=os.environ.get("GROQ_CLOUD_API", ""))
         
     decision_refs = get_signals_for_snapshot(snapshot_id, label_filter='decision')
     
-    if not decision_refs:
+    if not decision_refs and not additional_context:
         placeholder = "Insufficient data to generate this section. No confirmed decisions were found in the provided sources."
-        store_brd_section(session_id, snapshot_id, 'decisions', placeholder, [])
+        create_new_version(session_id, None, 'decisions', placeholder, 'system', snapshot_id=snapshot_id)
         return placeholder
         
     source_ids = [c.chunk_id for c in decision_refs]
@@ -235,7 +255,7 @@ Output ONLY the final markdown content for this section.
     except Exception as e:
         content = f"Error generating decisions: {e}"
         
-    store_brd_section(session_id, snapshot_id, 'decisions', content, source_ids)
+    create_new_version(session_id, None, 'decisions', content, 'system', snapshot_id=snapshot_id)
     return content
 
 def assumptions_agent(session_id: str, snapshot_id: str, client: Groq = None) -> str:
@@ -411,3 +431,27 @@ def run_brd_generation(session_id: str, client: Groq = None) -> str:
     print(f"[{session_id}] BRD Generation complete.")
     
     return snapshot_id
+
+def run_single_agent(
+    session_id: str, 
+    snapshot_id: str, 
+    section_name: str, 
+    client: Groq,
+    additional_context: str = ""
+) -> str:
+    """Dispatches to a specific agent for ad-hoc regeneration."""
+    agent_map = {
+        'functional_requirements': functional_requirements_agent,
+        'stakeholder_analysis': stakeholder_analysis_agent,
+        'timeline': timeline_agent,
+        'decisions': decisions_agent,
+        'assumptions': assumptions_agent,
+        'success_metrics': success_metrics_agent,
+        'executive_summary': executive_summary_agent
+    }
+    
+    agent_func = agent_map.get(section_name)
+    if not agent_func:
+        raise ValueError(f"Unknown section: {section_name}")
+        
+    return agent_func(session_id, snapshot_id, client, additional_context=additional_context)

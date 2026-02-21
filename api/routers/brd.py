@@ -13,6 +13,7 @@ from brd_module.brd_pipeline import run_brd_generation
 from brd_module.validator import validate_brd
 from brd_module.exporter import export_brd, export_brd_to_docx
 from brd_module.storage import get_latest_brd_sections, store_brd_section, get_connection
+from brd_module.hitl.orchestrator import submit_ad_hoc_prompt
 
 router = APIRouter(
     prefix="/sessions/{session_id}/brd",
@@ -22,6 +23,9 @@ router = APIRouter(
 class EditSectionRequest(BaseModel):
     content: str
     snapshot_id: str
+
+class PromptRequest(BaseModel):
+    prompt: str
 
 # CSS stylesheet for HTML rendering
 BRD_HTML_STYLES = """
@@ -240,6 +244,16 @@ def edit_brd_section(session_id: str, section_name: str, body: EditSectionReques
         return {"message": f"Section {section_name} updated successfully by human."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/prompt")
+def process_ai_prompt(session_id: str, body: PromptRequest):
+    """
+    Handle natural language commands from the AI Command Bar.
+    """
+    res = submit_ad_hoc_prompt(session_id, body.prompt)
+    if not res["success"]:
+        return JSONResponse(status_code=400, content=res)
+    return res
 
 @router.get("/export")
 def export_brd_document(session_id: str, format: str = "markdown"):
