@@ -1,0 +1,7 @@
+# Frontend/API Integration Dependencies
+# Install these to run the example_integration.py FastAPI server
+
+fastapi>=0.95.0
+uvicorn>=0.21.0
+pydantic>=1.10.0
+python-multipart>=0.0.5

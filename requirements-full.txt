@@ -1,0 +1,18 @@
+# All-in-One Requirements (BRD Module + PDF + DOCX + FastAPI)
+# Install this to get everything working:
+#   pip install -r requirements-full.txt
+
+# Core BRD Module
+psycopg2-binary>=2.9.0
+python-dotenv>=0.19.0
+
+# Export Format Support
+python-docx>=0.8.11      # DOCX generation with template support
+weasyprint>=60.0          # PDF generation with styling
+markdown>=3.5.0           # Markdown parsing and HTML conversion
+
+# FastAPI Integration (Optional - for example_integration.py)
+fastapi>=0.95.0
+uvicorn>=0.21.0
+pydantic>=1.10.0
+python-multipart>=0.0.5
