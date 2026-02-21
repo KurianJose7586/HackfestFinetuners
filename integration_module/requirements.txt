@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+google-api-python-client
+google-auth
+google-auth-oauthlib
+slack-sdk
+python-dotenv
+pymupdf
+python-docx

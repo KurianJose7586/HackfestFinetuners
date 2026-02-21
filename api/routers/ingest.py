@@ -8,7 +8,7 @@ from typing import List
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(PROJECT_ROOT)
-sys.path.append(os.path.join(PROJECT_ROOT, "Noise filter module"))
+sys.path.append(os.path.join(PROJECT_ROOT, "noise_filter_module"))
 
 from brd_module.storage import store_chunks
 from storage import copy_session_chunks
@@ -33,7 +33,7 @@ class IngestRequest(BaseModel):
 
 def _load_api_key():
     from dotenv import load_dotenv
-    load_dotenv(os.path.join(PROJECT_ROOT, "Noise filter module", ".env"))
+    load_dotenv(os.path.join(PROJECT_ROOT, "noise_filter_module", ".env"))
     return os.environ.get("GROQ_CLOUD_API")
 
 def _process_and_store(sess_id: str, chunk_dicts: list):
@@ -107,7 +107,7 @@ async def ingest_demo_dataset(session_id: str, limit: int = 80):
     from fastapi.responses import StreamingResponse
 
     emails_path = os.path.join(
-        PROJECT_ROOT, "Noise filter module", "emails.csv"
+        PROJECT_ROOT, "noise_filter_module", "emails.csv"
     )
     if not os.path.exists(emails_path):
         raise HTTPException(status_code=404, detail=f"Demo dataset not found at: {emails_path}")

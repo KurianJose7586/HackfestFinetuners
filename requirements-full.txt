@@ -11,8 +11,15 @@ python-docx>=0.8.11      # DOCX generation with template support
 weasyprint>=60.0          # PDF generation with styling
 markdown>=3.5.0           # Markdown parsing and HTML conversion
 
-# FastAPI Integration (Optional - for example_integration.py)
+# FastAPI Integration
 fastapi>=0.95.0
 uvicorn>=0.21.0
 pydantic>=1.10.0
-python-multipart>=0.0.5
+python-multipart>=0.0.7
+
+# Integration Module Dependencies (Gmail, Slack, PDF Parsing)
+google-api-python-client>=2.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+slack-sdk>=3.0.0
+pymupdf>=1.22.0
