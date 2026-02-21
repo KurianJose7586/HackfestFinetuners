@@ -7,6 +7,13 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from .routers import sessions, ingest, review, brd
+from brd_module.storage import init_db
+
+# Initialize database (PG or SQLite fallback) on startup
+try:
+    init_db()
+except Exception as e:
+    print(f"Warning: Database initialization failed: {e}")
 
 app = FastAPI(
     title="BRD Generation API",

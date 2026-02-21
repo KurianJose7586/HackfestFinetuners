@@ -1,6 +1,7 @@
 import fitz  # PyMuPDF
 import io
 import re
+import docx
 
 def clean_pdf_text(text):
     """
@@ -48,4 +49,35 @@ def extract_text_from_pdf_file(file_path):
         return clean_pdf_text(text)
     except Exception as e:
         print(f"Error extracting text from PDF file: {e}")
+        return ""
+
+def extract_text_from_docx_bytes(docx_bytes):
+    """
+    Extracts plain text from a DOCX document provided as bytes.
+    """
+    if not docx_bytes:
+        return ""
+    
+    try:
+        doc = docx.Document(io.BytesIO(docx_bytes))
+        full_text = []
+        for para in doc.paragraphs:
+            full_text.append(para.text)
+        return clean_pdf_text('\n'.join(full_text))
+    except Exception as e:
+        print(f"Error extracting text from DOCX bytes: {e}")
+        return ""
+
+def extract_text_from_docx_file(file_path):
+    """
+    Extracts plain text from a DOCX file on disk.
+    """
+    try:
+        doc = docx.Document(file_path)
+        full_text = []
+        for para in doc.paragraphs:
+            full_text.append(para.text)
+        return clean_pdf_text('\n'.join(full_text))
+    except Exception as e:
+        print(f"Error extracting text from DOCX file: {e}")
         return ""

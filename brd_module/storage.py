@@ -16,6 +16,7 @@ from schema import ClassifiedChunk, SignalLabel
 
 from dotenv import load_dotenv
 from pathlib import Path
+import sqlite3
 import uuid
 from datetime import datetime, timezone
 
@@ -28,176 +29,185 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "hackfest_aks")
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASS = os.getenv("DB_PASS", "postgres") # common default, update if needed
+DB_PASS = os.getenv("DB_PASS", "postgres")
 
 def get_connection():
-    """Returns a new connection to the PostgreSQL database."""
-    return psycopg2.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS
-    )
+    """Returns a connection to PostgreSQL if available, otherwise falls back to SQLite."""
+    try:
+        # Try PostgreSQL first
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS,
+            connect_timeout=2
+        )
+        return conn, "postgres"
+    except Exception:
+        # Fallback to SQLite
+        sqlite_path = os.path.join(_HERE, "aks_storage.db")
+        conn = sqlite3.connect(sqlite_path)
+        conn.row_factory = sqlite3.Row
+        return conn, "sqlite"
+
+def execute_query(conn, type, query, params=None, fetch=False):
+    """Abstraction to handle parameter naming differences and cursor behavior."""
+    if type == "sqlite":
+        query = query.replace("%s", "?")
+    
+    # In SQLite, the connection context manager handles transactions. 
+    # We still need a cursor to execute and fetch.
+    cur = conn.cursor()
+    if type == "postgres" and fetch:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+    try:
+        cur.execute(query, params or ())
+        if fetch:
+            if type == "sqlite":
+                return [dict(row) for row in cur.fetchall()]
+            return cur.fetchall()
+        if type == "postgres":
+            conn.commit()
+    finally:
+        cur.close()
+    return None
 
 def init_db():
-    """Creates the classified_chunks table if it does not exist."""
-    conn = get_connection()
+    """Creates the necessary tables using a compatible schema for both PG and SQLite."""
+    conn, db_type = get_connection()
     try:
-        with conn.cursor() as cur:
-            cur.execute("""
+        # Use TEXT for UUID/JSONB in SQLite compatibility
+        json_type = "JSONB" if db_type == "postgres" else "TEXT"
+        uuid_type = "UUID" if db_type == "postgres" else "TEXT"
+        
+        queries = [
+            f"""
                 CREATE TABLE IF NOT EXISTS classified_chunks (
-                    chunk_id UUID PRIMARY KEY,
+                    chunk_id {uuid_type} PRIMARY KEY,
                     session_id VARCHAR(255),
                     source_ref VARCHAR(255),
                     label VARCHAR(50),
                     suppressed BOOLEAN,
                     manually_restored BOOLEAN,
                     flagged_for_review BOOLEAN,
-                    created_at TIMESTAMP WITH TIME ZONE,
-                    data JSONB
+                    created_at TIMESTAMP,
+                    data {json_type}
                 );
-            """)
-            
-            # Create indexes for the columns we filter by
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_classified_chunks_label ON classified_chunks(label);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_classified_chunks_suppressed ON classified_chunks(suppressed);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_classified_chunks_session ON classified_chunks(session_id);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_classified_chunks_source_ref ON classified_chunks(source_ref);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_classified_chunks_flagged ON classified_chunks(flagged_for_review);")
-            
-            # BRD Pipeline Tables
-            cur.execute("""
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_chunks_sess ON classified_chunks(session_id);",
+            f"""
                 CREATE TABLE IF NOT EXISTS brd_snapshots (
-                    snapshot_id UUID PRIMARY KEY,
+                    snapshot_id {uuid_type} PRIMARY KEY,
                     session_id VARCHAR(255),
-                    created_at TIMESTAMP WITH TIME ZONE,
-                    chunk_ids JSONB
+                    created_at TIMESTAMP,
+                    chunk_ids {json_type}
                 );
-            """)
-
-            cur.execute("""
+            """,
+            f"""
                 CREATE TABLE IF NOT EXISTS brd_sections (
-                    section_id UUID PRIMARY KEY,
+                    section_id {uuid_type} PRIMARY KEY,
                     session_id VARCHAR(255),
-                    snapshot_id UUID,
+                    snapshot_id {uuid_type},
                     section_name VARCHAR(100),
                     version_number INTEGER DEFAULT 1,
                     content TEXT,
-                    source_chunk_ids JSONB,
+                    source_chunk_ids {json_type},
                     is_locked BOOLEAN DEFAULT FALSE,
                     human_edited BOOLEAN DEFAULT FALSE,
-                    generated_at TIMESTAMP WITH TIME ZONE,
-                    data JSONB
+                    generated_at TIMESTAMP,
+                    data {json_type}
                 );
-            """)
-            
-            cur.execute("""
+            """,
+            f"""
                 CREATE TABLE IF NOT EXISTS brd_validation_flags (
-                    flag_id UUID PRIMARY KEY,
+                    flag_id {uuid_type} PRIMARY KEY,
                     session_id VARCHAR(255),
                     section_name VARCHAR(100),
                     flag_type VARCHAR(50),
                     description TEXT,
                     severity VARCHAR(20),
                     auto_resolvable BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP WITH TIME ZONE
+                    created_at TIMESTAMP
                 );
-            """)
+            """
+        ]
+        
+        for q in queries:
+            execute_query(conn, db_type, q)
             
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_brd_sections_session ON brd_sections(session_id);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_brd_snapshots_session ON brd_snapshots(session_id);")
-            
-        conn.commit()
     finally:
         conn.close()
 
 def store_chunks(chunks: List[ClassifiedChunk]):
-    """Batch inserts a list of ClassifiedChunk objects into the database."""
-    if not chunks:
-        return
+    """Batch inserts chunks with DB fallback support."""
+    if not chunks: return
 
-    conn = get_connection()
+    conn, db_type = get_connection()
     try:
-        with conn.cursor() as cur:
-            insert_query = """
-                INSERT INTO classified_chunks (
-                    chunk_id, session_id, source_ref, label, suppressed, 
-                    manually_restored, flagged_for_review, created_at, data
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (chunk_id) DO NOTHING;
-            """
-            
-            values = []
-            for c in chunks:
-                # Convert Pydantic model to a dumpable dictionary
-                data_json = c.model_dump(mode="json")
-                values.append((
-                    c.chunk_id,
-                    c.session_id,
-                    c.source_ref,
-                    c.label.value,
-                    c.suppressed,
-                    c.manually_restored,
-                    c.flagged_for_review,
-                    c.created_at,
-                    json.dumps(data_json)
-                ))
-                
-            cur.executemany(insert_query, values)
-        conn.commit()
+        query = """
+            INSERT INTO classified_chunks (
+                chunk_id, session_id, source_ref, label, suppressed, 
+                manually_restored, flagged_for_review, created_at, data
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """
+        if db_type == "sqlite":
+            query = query.replace("%s", "?").replace(";", "")
+            # SQLite doesn't have ON CONFLICT DO NOTHING in the same way for bulk usually, 
+            # but we can use OR IGNORE
+            query = query.replace("INSERT INTO", "INSERT OR IGNORE INTO")
+
+        values = []
+        for c in chunks:
+            data_json = c.model_dump(mode="json")
+            values.append((
+                str(c.chunk_id),
+                c.session_id,
+                c.source_ref,
+                c.label.value,
+                c.suppressed,
+                c.manually_restored,
+                c.flagged_for_review,
+                c.created_at.isoformat() if hasattr(c.created_at, 'isoformat') else str(c.created_at),
+                json.dumps(data_json)
+            ))
+        
+        with conn.cursor() if db_type == "postgres" else conn as cur:
+            cur.executemany(query, values)
+            if db_type == "postgres": conn.commit()
     finally:
         conn.close()
 
 def get_active_signals(session_id: str = None) -> List[ClassifiedChunk]:
-    """Retrieves active signals, optionally filtered by session_id at DB level."""
-    conn = get_connection()
-    results = []
+    """Retrieves all active chunks using abstracted query execution, optionally filtered by session."""
+    conn, db_type = get_connection()
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            if session_id:
-                cur.execute("""
-                    SELECT data FROM classified_chunks 
-                    WHERE session_id = %s AND (suppressed = FALSE OR manually_restored = TRUE)
-                    ORDER BY created_at ASC;
-                """, (session_id,))
-            else:
-                cur.execute("""
-                    SELECT data FROM classified_chunks 
-                    WHERE suppressed = FALSE OR manually_restored = TRUE
-                    ORDER BY created_at ASC;
-                """)
-            rows = cur.fetchall()
-            for row in rows:
-                results.append(ClassifiedChunk.model_validate(row['data']))
+        if session_id:
+            query = "SELECT data FROM classified_chunks WHERE session_id = %s AND (suppressed = FALSE OR manually_restored = TRUE) ORDER BY created_at ASC"
+            params = (session_id,)
+        else:
+            query = "SELECT data FROM classified_chunks WHERE suppressed = FALSE OR manually_restored = TRUE ORDER BY created_at ASC"
+            params = None
+        rows = execute_query(conn, db_type, query, params=params, fetch=True)
+        return [ClassifiedChunk.model_validate(json.loads(r['data']) if isinstance(r['data'], str) else r['data']) for r in rows]
     finally:
         conn.close()
-    return results
 
 def get_noise_items(session_id: str = None) -> List[ClassifiedChunk]:
-    """Retrieves noise chunks, optionally filtered by session_id at DB level."""
-    conn = get_connection()
-    results = []
+    """Retrieves noise chunks using abstracted query execution, optionally filtered by session."""
+    conn, db_type = get_connection()
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            if session_id:
-                cur.execute("""
-                    SELECT data FROM classified_chunks 
-                    WHERE session_id = %s AND suppressed = TRUE AND manually_restored = FALSE
-                    ORDER BY created_at ASC;
-                """, (session_id,))
-            else:
-                cur.execute("""
-                    SELECT data FROM classified_chunks 
-                    WHERE suppressed = TRUE AND manually_restored = FALSE
-                    ORDER BY created_at ASC;
-                """)
-            rows = cur.fetchall()
-            for row in rows:
-                results.append(ClassifiedChunk.model_validate(row['data']))
+        if session_id:
+            query = "SELECT data FROM classified_chunks WHERE session_id = %s AND suppressed = TRUE AND manually_restored = FALSE ORDER BY created_at ASC"
+            params = (session_id,)
+        else:
+            query = "SELECT data FROM classified_chunks WHERE suppressed = TRUE AND manually_restored = FALSE ORDER BY created_at ASC"
+            params = None
+        rows = execute_query(conn, db_type, query, params=params, fetch=True)
+        return [ClassifiedChunk.model_validate(json.loads(r['data']) if isinstance(r['data'], str) else r['data']) for r in rows]
     finally:
         conn.close()
-    return results
 
 def restore_noise_item(chunk_id: str):
     """

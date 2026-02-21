@@ -107,7 +107,7 @@ async def ingest_demo_dataset(session_id: str, limit: int = 80):
     from fastapi.responses import StreamingResponse
 
     emails_path = os.path.join(
-        PROJECT_ROOT, "Noise filter module", "emails.csv", "emails.csv"
+        PROJECT_ROOT, "Noise filter module", "emails.csv"
     )
     if not os.path.exists(emails_path):
         raise HTTPException(status_code=404, detail=f"Demo dataset not found at: {emails_path}")
