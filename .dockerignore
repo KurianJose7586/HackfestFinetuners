@@ -1,32 +1,54 @@
+# Version control
 .git
 .gitignore
+
+# Python caches
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+
+# Virtual environments
 env/
 venv/
 .env
 .venv
+
+# Pip artifacts
 pip-log.txt
 pip-delete-this-directory.txt
-.toast
-.lucid
+
+# Local databases and logs (rebuilt at runtime)
 *.db
 *.log
+
+# Documentation (not needed in the image)
 docs/
+*.md
+!requirements*.txt
+
+# Frontend (served separately)
 frontend/
+
+# IDE / editor
 .pytest_cache/
 .vscode/
 .idea/
-podman-compose.yml
+.toast
+.lucid
+
+# Docker / Compose (avoid recursive build context issues)
+Dockerfile
 docker-compose.yml
-bash_history
-ps21-brd-agent/
+podman-compose.yml
+.dockerignore
+
+# Misc dev artifacts
 test_output*
 git_status_out.txt
-BRD_designDoc.md
-CompleteProjectDoc.md
-implementationStrategy.md
-status.txt
+bash_history
+run_tests.py
+start-backend.*
+ps21-brd-agent/
+brd Module/
