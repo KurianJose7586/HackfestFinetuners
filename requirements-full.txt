@@ -24,3 +24,6 @@ google-auth>=2.0.0
 google-auth-oauthlib>=1.0.0
 slack-sdk>=3.0.0
 pymupdf>=1.22.0
+
+# Noise Filter Module Dependencies
+groq>=0.4.0
