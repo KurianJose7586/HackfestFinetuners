@@ -44,9 +44,10 @@ def get_connection():
             connect_timeout=2
         )
         return conn, "postgres"
-    except Exception:
+    except Exception as e:
         # Fallback to SQLite
         sqlite_path = os.path.join(_HERE, "aks_storage.db")
+        print(f"INFO: PostgreSQL connection failed ({e}). Falling back to local SQLite at: {sqlite_path}")
         conn = sqlite3.connect(sqlite_path)
         conn.row_factory = sqlite3.Row
         return conn, "sqlite"

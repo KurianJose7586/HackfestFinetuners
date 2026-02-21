@@ -15,12 +15,17 @@ from brd_module.storage import init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize database (PG or SQLite fallback) AFTER uvicorn has bound the port
+    port = os.getenv("PORT", "unknown")
+    print(f"INFO: BRD Generation API starting up on port {port}...")
     try:
         init_db()
-        print("Database initialized successfully.")
+        print("INFO: Database initialized successfully.")
     except Exception as e:
-        print(f"Warning: Database initialization failed: {e}")
+        print(f"WARNING: Database initialization failed: {e}")
+    
+    print("INFO: API is ready to receive requests.")
     yield  # App runs here
+    print("INFO: API shutting down...")
 
 
 app = FastAPI(
