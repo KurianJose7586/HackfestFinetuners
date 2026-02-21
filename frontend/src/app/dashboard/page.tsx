@@ -1,177 +1,281 @@
 "use client";
 
-import { useProjectStore } from '@/store/useProjectStore';
-import { Badge } from '@/components/ui/badge';
-import {
-    FolderOpen,
-    FileEdit,
-    CheckCircle2,
-    MoreVertical,
-    Trash2,
-    ExternalLink,
-    Plus
-} from 'lucide-react';
-import Link from 'next/link';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { formatDistanceToNow } from 'date-fns';
+import Link from 'next/link';
+import {
+    ArrowRight, Zap, CheckCircle2, AlertTriangle, Download,
+    TrendingUp, Database, FileText, Plus
+} from 'lucide-react';
+import PipelineStepper, { StageInfo } from '@/components/ui/PipelineStepper';
 
-export default function DashboardPage() {
-    const { projects, deleteProject } = useProjectStore();
+// ─── Mock data ────────────────────────────────────────────────────────────────
 
-    const stats = [
-        {
-            label: 'Total Projects',
-            value: projects.length,
-            icon: FolderOpen,
-            color: 'text-cyan-400'
-        },
-        {
-            label: 'Drafts in Progress',
-            value: projects.filter(p => p.status === 'draft' || p.status === 'in-progress').length,
-            icon: FileEdit,
-            color: 'text-yellow-400'
-        },
-        {
-            label: 'Completed BRDs',
-            value: projects.filter(p => p.status === 'completed').length,
-            icon: CheckCircle2,
-            color: 'text-green-400'
-        }
-    ];
+const PIPELINE_STAGES: StageInfo[] = [
+    { name: 'Ingestion', status: 'complete', timestamp: '14:02', itemCount: 248 },
+    { name: 'Noise Filtering', status: 'complete', timestamp: '14:04', itemCount: 183 },
+    { name: 'AKS Storage', status: 'running' },
+    { name: 'BRD Generation', status: 'pending' },
+    { name: 'Validation', status: 'pending' },
+    { name: 'Export', status: 'pending' },
+];
+
+const SIGNAL_DATA = [
+    { label: 'Requirement', count: 82, color: '#3B82F6', className: 'badge-requirement' },
+    { label: 'Decision', count: 41, color: '#8B5CF6', className: 'badge-decision' },
+    { label: 'Feedback', count: 28, color: '#F59E0B', className: 'badge-feedback' },
+    { label: 'Timeline', count: 19, color: '#10B981', className: 'badge-timeline' },
+    { label: 'Noise', count: 13, color: '#6B7280', className: 'badge-noise' },
+];
+
+const STATS = [
+    { label: 'Sources Connected', value: '3', icon: Database, color: 'text-cyan-400', glow: 'shadow-glow-cyan' },
+    { label: 'Chunks Processed', value: '248', icon: TrendingUp, color: 'text-purple-400', glow: 'shadow-glow-purple' },
+    { label: 'Signals Extracted', value: '183', icon: Zap, color: 'text-amber-400', glow: 'shadow-glow-amber' },
+    { label: 'Validation Flags', value: '5', icon: AlertTriangle, color: 'text-red-400', glow: 'shadow-glow-red' },
+];
+
+// ─── Custom SVG Donut Chart ───────────────────────────────────────────────────
+
+function DonutChart({
+    data,
+    onSegmentClick,
+    activeSegment,
+}: {
+    data: typeof SIGNAL_DATA;
+    onSegmentClick: (label: string | null) => void;
+    activeSegment: string | null;
+}) {
+    const total = data.reduce((s, d) => s + d.count, 0);
+    const cx = 80, cy = 80, r = 60, stroke = 22;
+    const circumference = 2 * Math.PI * r;
+
+    let offset = 0;
+    const segments = data.map(d => {
+        const pct = d.count / total;
+        const len = pct * circumference;
+        const seg = { ...d, pct, len, offset };
+        offset += len;
+        return seg;
+    });
 
     return (
-        <div className="space-y-8">
-            {/* Header */}
+        <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+                <svg width="160" height="160" viewBox="0 0 160 160">
+                    {/* Background ring */}
+                    <circle
+                        cx={cx} cy={cy} r={r}
+                        fill="none"
+                        stroke="rgba(255,255,255,0.05)"
+                        strokeWidth={stroke}
+                    />
+                    {segments.map((seg) => (
+                        <circle
+                            key={seg.label}
+                            cx={cx} cy={cy} r={r}
+                            fill="none"
+                            stroke={seg.color}
+                            strokeWidth={activeSegment === seg.label ? stroke + 4 : stroke}
+                            strokeDasharray={`${seg.len} ${circumference - seg.len}`}
+                            strokeDashoffset={-seg.offset}
+                            strokeLinecap="round"
+                            transform={`rotate(-90 ${cx} ${cy})`}
+                            style={{
+                                opacity: activeSegment && activeSegment !== seg.label ? 0.3 : 1,
+                                filter: activeSegment === seg.label ? `drop-shadow(0 0 8px ${seg.color})` : undefined,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                            }}
+                            onClick={() => onSegmentClick(activeSegment === seg.label ? null : seg.label)}
+                        />
+                    ))}
+                    {/* Centre text */}
+                    <text x={cx} y={cy - 6} textAnchor="middle" className="fill-zinc-100" style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Inter' }}>
+                        {total}
+                    </text>
+                    <text x={cx} y={cy + 12} textAnchor="middle" className="fill-zinc-500" style={{ fontSize: 9, fontFamily: 'Inter' }}>
+                        SIGNALS
+                    </text>
+                </svg>
+            </div>
+
+            {/* Legend */}
+            <div className="w-full space-y-1.5">
+                {data.map(d => (
+                    <button
+                        key={d.label}
+                        onClick={() => onSegmentClick(activeSegment === d.label ? null : d.label)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all ${activeSegment === d.label ? 'bg-white/8' : 'hover:bg-white/5'
+                            }`}
+                    >
+                        <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: d.color }} />
+                        <span className="text-xs text-zinc-300 flex-1">{d.label}</span>
+                        <span className="text-xs font-mono text-zinc-500">{d.count}</span>
+                        <span className="text-[10px] text-zinc-600">{((d.count / total) * 100).toFixed(0)}%</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Contextual Action Centre ─────────────────────────────────────────────────
+
+function ActionCentre() {
+    // State: AKS running, BRD not started yet
+    return (
+        <div className="space-y-3 h-full">
+            <div className="glass-card p-4 rounded-xl border-amber-500/20 hover:border-amber-500/30 transition-all">
+                <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                        <Zap size={16} className="text-amber-400" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-semibold text-amber-300">AKS Storage Running</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">183 classified signals being indexed</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="glass-card p-4 rounded-xl">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 font-medium">Next Actions</p>
+                <div className="space-y-2">
+                    <Link href="/brd">
+                        <button className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5">
+                            <FileText size={15} />
+                            Generate BRD Draft
+                            <ArrowRight size={14} className="ml-auto opacity-60" />
+                        </button>
+                    </Link>
+                    <Link href="/signals">
+                        <button className="btn-secondary w-full flex items-center justify-center gap-2 text-sm py-2 mt-1">
+                            <AlertTriangle size={14} className="text-amber-400" />
+                            Review 5 Flagged Signals
+                        </button>
+                    </Link>
+                </div>
+            </div>
+
+            <div className="glass-card p-4 rounded-xl">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-medium">Export Status</p>
+                <div className="flex items-center gap-2">
+                    <Download size={13} className="text-zinc-600" />
+                    <span className="text-xs text-zinc-500">Awaiting BRD generation</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Main Dashboard Page ──────────────────────────────────────────────────────
+
+export default function DashboardPage() {
+    const [activeSegment, setActiveSegment] = useState<string | null>(null);
+
+    return (
+        <div className="p-6 space-y-6 max-w-[1400px]">
+            {/* Page header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-semibold text-zinc-100">Dashboard</h1>
-                    <p className="text-zinc-400 mt-1">Manage your Business Requirements Documents</p>
+                    <h1 className="text-2xl font-bold text-zinc-100">Session Dashboard</h1>
+                    <p className="text-sm text-zinc-500 mt-0.5">Hackfest Demo Session · 21 Feb 2026</p>
                 </div>
-                <Link href="/project/new">
-                    <button className="flex items-center gap-2 px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors shadow-lg shadow-cyan-500/20">
-                        <Plus size={18} />
-                        New Project
+                <Link href="/ingestion">
+                    <button className="btn-primary flex items-center gap-2 text-sm">
+                        <Plus size={15} />
+                        Add Sources
                     </button>
                 </Link>
             </div>
 
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat, index) => {
+            {/* Row 1: Pipeline Status Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="glass-card p-5 rounded-xl"
+            >
+                <div className="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 className="text-sm font-semibold text-zinc-200">Pipeline Status</h2>
+                        <p className="text-xs text-zinc-500 mt-0.5">6 stages · Stage 3 in progress</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full glass-card text-[11px]">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        <span className="text-amber-300 font-medium">Running</span>
+                    </div>
+                </div>
+                <PipelineStepper stages={PIPELINE_STAGES} variant="expanded" />
+            </motion.div>
+
+            {/* Row 2: Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {STATS.map((stat, i) => {
                     const Icon = stat.icon;
                     return (
                         <motion.div
                             key={stat.label}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="bg-zinc-900/50 border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors"
+                            transition={{ duration: 0.4, delay: i * 0.06 }}
+                            className="glass-card p-4 rounded-xl flex items-center gap-3"
                         >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-zinc-400 text-sm font-medium">{stat.label}</p>
-                                    <p className="text-3xl font-semibold text-zinc-100 mt-2">{stat.value}</p>
-                                </div>
-                                <div className={`p-3 rounded-lg bg-white/5 ${stat.color}`}>
-                                    <Icon size={24} />
-                                </div>
+                            <div className={`w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 ${stat.glow}`}>
+                                <Icon size={18} className={stat.color} />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-zinc-100">{stat.value}</p>
+                                <p className="text-[11px] text-zinc-500 leading-tight">{stat.label}</p>
                             </div>
                         </motion.div>
                     );
                 })}
             </div>
 
-            {/* Projects Table */}
-            <div className="bg-zinc-900/50 border border-white/5 rounded-xl overflow-hidden">
-                <div className="px-6 py-4 border-b border-white/5">
-                    <h2 className="text-lg font-semibold text-zinc-100">All Projects</h2>
-                </div>
-
-                {projects.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16">
-                        <FolderOpen size={48} className="text-zinc-600 mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-300 mb-2">No projects yet</h3>
-                        <p className="text-zinc-500 text-sm mb-6">Create your first project to get started</p>
-                        <Link href="/project/new">
-                            <button className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors">
-                                Create Project
+            {/* Row 3: Donut + Action Centre */}
+            <div className="grid lg:grid-cols-3 gap-5">
+                {/* Donut Chart */}
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.25 }}
+                    className="glass-card p-5 rounded-xl"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-sm font-semibold text-zinc-200">Signal Breakdown</h2>
+                        {activeSegment && (
+                            <button
+                                onClick={() => setActiveSegment(null)}
+                                className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                            >
+                                Clear filter
                             </button>
-                        </Link>
+                        )}
                     </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-white/5">
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                                        Name
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                                        Last Modified
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                                        Sources
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {projects.map((project, index) => (
-                                    <motion.tr
-                                        key={project.id}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        className="hover:bg-white/5 transition-colors"
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <Link
-                                                    href={`/project/${project.id}`}
-                                                    className="text-zinc-100 font-medium hover:text-cyan-400 transition-colors"
-                                                >
-                                                    {project.name}
-                                                </Link>
-                                                {project.description && (
-                                                    <p className="text-zinc-500 text-sm mt-0.5">{project.description}</p>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <Badge variant={project.status}>{project.status}</Badge>
-                                        </td>
-                                        <td className="px-6 py-4 text-zinc-400 text-sm">
-                                            {formatDistanceToNow(project.lastModified, { addSuffix: true })}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-zinc-400 text-sm">{project.sourceCount} sources</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Link href={`/project/${project.id}`}>
-                                                    <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-zinc-400 hover:text-zinc-100">
-                                                        <ExternalLink size={16} />
-                                                    </button>
-                                                </Link>
-                                                <button
-                                                    onClick={() => deleteProject(project.id)}
-                                                    className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-zinc-400 hover:text-red-400"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </motion.tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                    <DonutChart
+                        data={SIGNAL_DATA}
+                        onSegmentClick={setActiveSegment}
+                        activeSegment={activeSegment}
+                    />
+                    {activeSegment && (
+                        <div className="mt-3 px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300">
+                            Signals filtered to <strong>{activeSegment}</strong> — go to{' '}
+                            <Link href="/signals" className="underline hover:text-cyan-200">Signal Review</Link>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Action Centre — spans 2 cols */}
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.32 }}
+                    className="glass-card p-5 rounded-xl lg:col-span-2"
+                >
+                    <h2 className="text-sm font-semibold text-zinc-200 mb-4">Action Centre</h2>
+                    <ActionCentre />
+                </motion.div>
             </div>
         </div>
     );

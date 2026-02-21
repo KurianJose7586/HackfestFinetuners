@@ -38,16 +38,22 @@ export default function HomePage() {
                         meeting transcripts, and documents using advanced AI agents.
                     </p>
 
-                    <div className="flex items-center justify-center gap-4 pt-4">
+                    <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+                        <Link href="/dashboard">
+                            <button className="flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-xl font-semibold text-lg transition-all shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-0.5">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                New BRD Session
+                            </button>
+                        </Link>
                         <Link href="/login">
-                            <button className="flex items-center gap-2 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium text-lg transition-colors shadow-lg shadow-cyan-500/20">
-                                Get Started
-                                <ArrowRight size={20} />
+                            <button className="flex items-center gap-2 px-6 py-3.5 bg-white/6 hover:bg-white/10 text-zinc-300 border border-white/12 rounded-xl font-medium text-lg transition-all hover:-translate-y-0.5">
+                                Sign In
+                                <ArrowRight size={18} />
                             </button>
                         </Link>
                         <a href="#features">
-                            <button className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium text-lg transition-colors">
-                                Learn More
+                            <button className="px-5 py-3.5 text-zinc-500 hover:text-zinc-300 font-medium text-base transition-colors">
+                                Learn More ↓
                             </button>
                         </a>
                     </div>

@@ -1,44 +1,207 @@
 "use client";
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     LayoutDashboard,
-    Settings,
+    Database,
+    Zap,
     FileText,
-    ChevronRight,
+    Download,
+    Settings,
+    Bell,
     User,
     LogOut,
-    AlertTriangle,
-    GitBranch,
-    TrendingUp,
     Menu,
-    X
+    X,
+    ChevronRight,
+    Wifi,
+    WifiOff,
+    ChevronDown,
+    Clock,
+    Plus,
+    Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import PipelineStepper, { StageInfo } from '@/components/ui/PipelineStepper';
 
+// ─── Navigation config ────────────────────────────────────────────────────────
 const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Templates', href: '/templates', icon: FileText },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, stageIndex: -1 },
+    { name: 'Sources', href: '/ingestion', icon: Database, stageIndex: 0 },
+    { name: 'Signals', href: '/signals', icon: Zap, stageIndex: 1 },
+    { name: 'BRD Draft', href: '/brd', icon: FileText, stageIndex: 3 },
+    { name: 'Export', href: '/export', icon: Download, stageIndex: 5 },
+    { name: 'Settings', href: '/settings', icon: Settings, stageIndex: -1 },
 ];
 
-const analytics = [
-    { name: 'Conflicts', href: '/analytics/conflicts', icon: AlertTriangle },
-    { name: 'Traceability', href: '/analytics/traceability', icon: GitBranch },
-    { name: 'Sentiment', href: '/analytics/sentiment', icon: TrendingUp },
+// ─── Mock pipeline stages (would come from store in production) ───────────────
+const MOCK_STAGES: StageInfo[] = [
+    { name: 'Ingestion', status: 'complete', timestamp: '14:02', itemCount: 248 },
+    { name: 'Noise Filtering', status: 'complete', timestamp: '14:04', itemCount: 183 },
+    { name: 'AKS Storage', status: 'running' },
+    { name: 'BRD Generation', status: 'pending' },
+    { name: 'Validation', status: 'pending' },
+    { name: 'Export', status: 'pending' },
 ];
 
+function getNavStatus(stageIndex: number, stages: StageInfo[]): 'complete' | 'running' | 'pending' | 'error' | 'none' {
+    if (stageIndex < 0) return 'none';
+    return stages[stageIndex]?.status ?? 'pending';
+}
+
+const STATUS_DOT: Record<string, string> = {
+    complete: 'bg-emerald-400',
+    running: 'bg-amber-400 animate-pulse',
+    pending: 'bg-zinc-600',
+    error: 'bg-red-400',
+    none: 'hidden',
+};
+
+// ─── Mock sessions ────────────────────────────────────────────────────────────
+const SESSIONS = [
+    { id: 'sess_02a9fe3c', name: 'Hackfest Demo Session', status: 'active' as const },
+    { id: 'sess_01b7aa2d', name: 'Project Alpha Kickoff', status: 'complete' as const },
+];
+
+// ─── Session Selector ────────────────────────────────────────────────────────
+function SessionSelector() {
+    const [open, setOpen] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [active, setActive] = useState(SESSIONS[0]);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+                setCreating(false);
+                setNewName('');
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const handleCreate = () => {
+        if (!newName.trim()) return;
+        const id = `sess_${Math.random().toString(36).slice(2, 10)}`;
+        const sess = { id, name: newName.trim(), status: 'active' as const };
+        SESSIONS.unshift(sess);
+        setActive(sess);
+        setCreating(false);
+        setNewName('');
+        setOpen(false);
+    };
+
+    return (
+        <div ref={ref} className="relative">
+            {/* Trigger */}
+            <button
+                onClick={() => { setOpen(v => !v); setCreating(false); }}
+                className="w-full flex items-center justify-between px-3 py-2.5 glass-card rounded-lg group hover:border-white/20 transition-all"
+            >
+                <div className="flex items-center gap-2 min-w-0">
+                    <Clock size={12} className="text-zinc-500 flex-shrink-0" />
+                    <div className="min-w-0 text-left">
+                        <p className="text-xs font-medium text-zinc-200 truncate">{active.name}</p>
+                        <p className="text-[10px] text-zinc-500 font-mono">{active.id}</p>
+                    </div>
+                </div>
+                <ChevronDown size={12} className={cn('text-zinc-500 flex-shrink-0 transition-transform', open && 'rotate-180')} />
+            </button>
+
+            {/* Dropdown */}
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-xl overflow-hidden"
+                        style={{ background: 'rgba(14,17,28,0.98)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}
+                    >
+                        {/* Session list */}
+                        <div className="p-1.5">
+                            {SESSIONS.map(sess => (
+                                <button
+                                    key={sess.id}
+                                    onClick={() => { setActive(sess); setOpen(false); }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/6 text-left transition-colors"
+                                >
+                                    <div className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', sess.status === 'active' ? 'bg-emerald-400' : 'bg-zinc-600')} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-zinc-200 truncate">{sess.name}</p>
+                                        <p className="text-[10px] text-zinc-600 font-mono">{sess.id}</p>
+                                    </div>
+                                    {sess.id === active.id && <Check size={11} className="text-cyan-400 flex-shrink-0" />}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="border-t border-white/8 p-1.5">
+                            {creating ? (
+                                <div className="p-2 space-y-2">
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="e.g. Q2 Product BRD…"
+                                        value={newName}
+                                        onChange={e => setNewName(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setCreating(false); setNewName(''); } }}
+                                        className="glass-input w-full px-2.5 py-1.5 text-xs"
+                                    />
+                                    <div className="flex gap-1.5">
+                                        <button
+                                            onClick={handleCreate}
+                                            disabled={!newName.trim()}
+                                            className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            Create
+                                        </button>
+                                        <button
+                                            onClick={() => { setCreating(false); setNewName(''); }}
+                                            className="px-3 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => setCreating(true)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-cyan-500/10 text-left transition-colors group"
+                                >
+                                    <div className="w-5 h-5 rounded-md bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                                        <Plus size={10} className="text-cyan-400" />
+                                    </div>
+                                    <span className="text-xs text-cyan-400 font-medium group-hover:text-cyan-300 transition-colors">New BRD Session</span>
+                                </button>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { user, logout } = useAuthStore();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [groqConnected] = useState(true);
+    const [notifCount] = useState(3);
+    const stages = MOCK_STAGES;
+
+    const activeStage = stages.find(s => s.status === 'running');
 
     const handleLogout = () => {
         logout();
@@ -46,146 +209,176 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     };
 
     return (
-        <div className="flex h-screen bg-zinc-950">
-            {/* Sidebar */}
-            <AnimatePresence>
-                {isSidebarOpen && (
+        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
+
+            {/* ── GS-01 Sidebar ─────────────────────────────────────────────── */}
+            <AnimatePresence initial={false}>
+                {sidebarOpen && (
                     <motion.aside
-                        initial={{ x: -280 }}
-                        animate={{ x: 0 }}
-                        exit={{ x: -280 }}
-                        transition={{ type: "spring", damping: 25 }}
-                        className="w-[280px] border-r border-white/10 bg-zinc-950/50 backdrop-blur-xl flex flex-col fixed lg:sticky top-0 h-screen z-40"
+                        key="sidebar"
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: 240, opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+                        className="glass-sidebar flex flex-col h-full overflow-hidden z-30 flex-shrink-0"
                     >
-                        {/* Logo */}
-                        <div className="p-6 border-b border-white/5">
-                            <h1 className="text-xl font-bold text-white">
-                                PS21 <span className="text-cyan-400">BRD Agent</span>
-                            </h1>
-                            <p className="text-xs text-zinc-500 mt-1">AI-Powered Business Requirements</p>
+                        {/* Logo + Session selector */}
+                        <div className="px-5 py-5 border-b border-white/8">
+                            <div className="flex items-center gap-2 mb-4">
+                                {/* Logo mark */}
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/40 to-purple-600/40 border border-cyan-500/30 flex items-center justify-center glow-cyan">
+                                    <Zap size={14} className="text-cyan-300" />
+                                </div>
+                                <div>
+                                    <h1 className="text-sm font-bold text-white leading-none">PS21</h1>
+                                    <p className="text-[10px] text-cyan-400 font-medium">BRD Agent</p>
+                                </div>
+                            </div>
+
+                            {/* Session selector */}
+                            <SessionSelector />
                         </div>
 
                         {/* Navigation */}
-                        <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-                            <div className="space-y-1">
-                                {navigation.map((item) => {
-                                    const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-                                    const Icon = item.icon;
+                        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+                            {navigation.map((item) => {
+                                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                                const Icon = item.icon;
+                                const status = getNavStatus(item.stageIndex, stages);
 
-                                    return (
-                                        <Link
-                                            key={item.name}
-                                            href={item.href}
-                                            className={cn(
-                                                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative',
-                                                isActive
-                                                    ? 'bg-cyan-500/10 text-cyan-400 border-l-2 border-cyan-500'
-                                                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
-                                            )}
-                                        >
-                                            {isActive && (
-                                                <motion.div
-                                                    layoutId="activeNav"
-                                                    className="absolute inset-0 bg-cyan-500/10 rounded-lg"
-                                                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                                />
-                                            )}
-                                            <Icon size={18} className="relative z-10" />
-                                            <span className="relative z-10">{item.name}</span>
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Analytics Section */}
-                            <div className="space-y-1">
-                                <h3 className="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                                    Analytics
-                                </h3>
-                                {analytics.map((item) => {
-                                    const isActive = pathname === item.href;
-                                    const Icon = item.icon;
-
-                                    return (
-                                        <Link
-                                            key={item.name}
-                                            href={item.href}
-                                            className={cn(
-                                                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                                                isActive
-                                                    ? 'bg-cyan-500/10 text-cyan-400'
-                                                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
-                                            )}
-                                        >
-                                            <Icon size={18} />
-                                            <span>{item.name}</span>
-                                        </Link>
-                                    );
-                                })}
-                            </div>
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={cn(
+                                            'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative',
+                                            isActive
+                                                ? 'nav-item-active'
+                                                : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
+                                        )}
+                                    >
+                                        {isActive && (
+                                            <motion.div
+                                                layoutId="sidebar-active"
+                                                className="absolute inset-0 rounded-lg bg-cyan-500/10"
+                                                transition={{ type: 'spring', stiffness: 380, damping: 35 }}
+                                            />
+                                        )}
+                                        <Icon size={16} className="relative z-10 flex-shrink-0" />
+                                        <span className="relative z-10 flex-1 truncate">{item.name}</span>
+                                        {status !== 'none' && (
+                                            <span className={cn('w-1.5 h-1.5 rounded-full relative z-10 flex-shrink-0', STATUS_DOT[status])} />
+                                        )}
+                                    </Link>
+                                );
+                            })}
                         </nav>
 
-                        {/* User Profile */}
-                        <div className="p-4 border-t border-white/5 space-y-2">
-                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white/5">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center">
-                                    <User size={16} className="text-white" />
+                        {/* Footer — pipeline indicator + API status */}
+                        <div className="px-4 pb-4 space-y-3 border-t border-white/8 pt-3">
+                            {/* Active pipeline stage */}
+                            {activeStage && (
+                                <div className="px-3 py-2 rounded-lg glass-card">
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Active Stage</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
+                                        <span className="text-xs font-medium text-amber-300">{activeStage.name}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* API Connection */}
+                            <div className="flex items-center justify-between px-1">
+                                <div className="flex items-center gap-1.5">
+                                    {groqConnected
+                                        ? <Wifi size={12} className="text-emerald-400" />
+                                        : <WifiOff size={12} className="text-red-400" />}
+                                    <span className="text-[10px] text-zinc-500">
+                                        Groq {groqConnected ? 'Connected' : 'Disconnected'}
+                                    </span>
+                                </div>
+                                <div className={cn('w-1.5 h-1.5 rounded-full', groqConnected ? 'bg-emerald-400' : 'bg-red-400')} />
+                            </div>
+
+                            {/* User */}
+                            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg glass-card">
+                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                    <User size={12} className="text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-zinc-100 truncate">{user?.name}</p>
-                                    <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
+                                    <p className="text-xs font-medium text-zinc-200 truncate">{user?.name ?? 'User'}</p>
+                                    <p className="text-[10px] text-zinc-500 truncate">{user?.email ?? ''}</p>
                                 </div>
+                                <button
+                                    onClick={handleLogout}
+                                    title="Logout"
+                                    className="p-1 rounded text-zinc-600 hover:text-red-400 transition-colors flex-shrink-0"
+                                >
+                                    <LogOut size={12} />
+                                </button>
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-colors text-sm"
-                            >
-                                <LogOut size={16} />
-                                Logout
-                            </button>
                         </div>
                     </motion.aside>
                 )}
             </AnimatePresence>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Top Bar */}
-                <header className="h-16 border-b border-white/5 bg-zinc-950/50 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-10">
-                    <div className="flex items-center gap-4">
-                        {/* Hamburger Menu Button */}
+            {/* ── Main area ─────────────────────────────────────────────────── */}
+            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+
+                {/* ── GS-02 Session Status Bar ───────────────────────────────── */}
+                <header className="glass-topbar h-12 flex items-center justify-between px-4 flex-shrink-0 z-20">
+                    <div className="flex items-center gap-3">
+                        {/* Hamburger */}
                         <button
-                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="p-2 bg-zinc-900/90 border border-white/10 rounded-lg text-zinc-100 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-400 transition-all backdrop-blur-sm"
+                            onClick={() => setSidebarOpen(v => !v)}
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-colors"
                         >
-                            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+                            {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
                         </button>
 
-                        {/* Breadcrumbs */}
-                        <div className="flex items-center gap-2 text-sm text-zinc-400">
-                            <Link href="/" className="hover:text-zinc-100 transition-colors">
-                                Home
-                            </Link>
+                        {/* Session ID */}
+                        <span className="font-mono text-[11px] text-zinc-600 hidden sm:block">
+                            sess_02a9fe3c
+                        </span>
+
+                        {/* Breadcrumb */}
+                        <div className="hidden md:flex items-center gap-1.5 text-xs text-zinc-500">
+                            <span>Home</span>
                             {pathname && pathname !== '/' && (
                                 <>
-                                    <ChevronRight size={14} className="text-zinc-600" />
-                                    <span className="text-zinc-100 capitalize">
-                                        {pathname.split('/').filter(Boolean).join(' / ')}
+                                    <ChevronRight size={10} className="text-zinc-700" />
+                                    <span className="text-zinc-300 capitalize">
+                                        {pathname.split('/').filter(Boolean).at(-1)}
                                     </span>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    {/* Status Indicator */}
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-xs font-medium text-green-400">System Operational</span>
+                    <div className="flex items-center gap-3">
+                        {/* Mini pipeline stepper */}
+                        <PipelineStepper stages={stages} variant="compact" className="hidden lg:flex" />
+
+                        {/* Signal count */}
+                        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full glass-card text-[11px]">
+                            <Zap size={10} className="text-cyan-400" />
+                            <span className="text-zinc-400">183 signals</span>
+                        </div>
+
+                        {/* Notification bell */}
+                        <button className="relative p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-colors">
+                            <Bell size={15} />
+                            {notifCount > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
+                                    {notifCount}
+                                </span>
+                            )}
+                        </button>
                     </div>
                 </header>
 
-                {/* Page Content */}
-                <main className="flex-1 overflow-y-auto p-8">
+                {/* ── Page content ──────────────────────────────────────────── */}
+                <main className="flex-1 overflow-y-auto">
                     {children}
                 </main>
             </div>
