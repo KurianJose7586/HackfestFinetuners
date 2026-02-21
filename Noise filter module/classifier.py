@@ -10,7 +10,9 @@ import os
 import re
 import time
 import logging
+import threading
 from typing import Optional
+from concurrent.futures import ThreadPoolExecutor
 
 from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
 
@@ -214,13 +216,14 @@ def classify_with_llm(chunk: dict, client: Groq) -> dict:
                 "reasoning": f"LLM parse error: {e}",
             }
         except (APIConnectionError, RateLimitError, APIStatusError) as e:
-            if attempt == 0:
-                time.sleep(2)
+            if attempt < 2:
+                # Exponential backoff or just a longer sleep for rate limits
+                time.sleep(5 if isinstance(e, RateLimitError) else 2)
                 continue
             return {
                 "label": "noise",
                 "confidence": 0.0,
-                "reasoning": f"LLM API error: {e}",
+                "reasoning": f"LLM API error (429/RateLimit): {e}",
             }
         except Exception as e:
             return {
@@ -276,60 +279,79 @@ def has_signal_nouns(text: str) -> bool:
 # Main orchestrator
 # ---------------------------------------------------------------------------
 
-def classify_chunks(chunks: list[dict], api_key: str) -> list[ClassifiedChunk]:
+def _process_single_chunk(chunk: dict, client: Groq, counter_info: dict) -> ClassifiedChunk:
     """
-    Classify a list of raw chunk dicts.
+    Process a single chunk: heuristics -> domain gate -> LLM.
+    """
+    # Step 1: heuristics
+    heuristic_label = apply_heuristics(chunk)
+
+    if heuristic_label is not None:
+        log_chunk_decision(chunk, "HEURISTIC", heuristic_label, 1.0, "Heuristic rule matched")
+        result = {
+            "label": heuristic_label,
+            "confidence": 1.0,
+            "reasoning": "Classified by heuristic rule.",
+            "flagged_for_review": False,
+        }
+    elif not has_signal_nouns(chunk.get("cleaned_text", "")):
+        # no signal nouns present — noise without LLM call
+        log_chunk_decision(chunk, "DOMAIN_GATE", "noise", 1.0, "No signal nouns found")
+        result = {
+            "label": "noise",
+            "confidence": 1.0,
+            "reasoning": "No project-relevant domain terms detected.",
+            "flagged_for_review": False,
+        }
+    else:
+        # Step 2: LLM
+        result = classify_with_llm(chunk, client)
+        # Step 3: confidence threshold
+        result = apply_confidence_threshold(result)
+        log_chunk_decision(chunk, "LLM", result["label"], result["confidence"], result["reasoning"])
+
+    classified = ClassifiedChunk(
+        source_ref=chunk.get("source_ref", ""),
+        speaker=chunk.get("speaker"),
+        raw_text=chunk.get("raw_text", ""),
+        cleaned_text=chunk.get("cleaned_text", ""),
+        label=SignalLabel(result["label"]),
+        confidence=result["confidence"],
+        reasoning=result["reasoning"],
+        flagged_for_review=result.get("flagged_for_review", False),
+    )
+
+    # Progress tracking
+    with counter_info["lock"]:
+        counter_info["count"] += 1
+        current = counter_info["count"]
+        total = counter_info["total"]
+        if current % 10 == 0 or current == total:
+            print(f"  Classified {current}/{total} chunks...")
+
+    return classified
+
+
+def classify_chunks(chunks: list[dict], api_key: str, max_workers: int = 10) -> list[ClassifiedChunk]:
+    """
+    Classify a list of raw chunk dicts in parallel.
     Returns a list of ClassifiedChunk objects.
     """
     client = Groq(api_key=api_key)
+    
+    counter_info = {
+        "count": 0,
+        "total": len(chunks),
+        "lock": threading.Lock()
+    }
 
     results: list[ClassifiedChunk] = []
 
-    for i, chunk in enumerate(chunks):
-        # Step 1: heuristics
-        heuristic_label = apply_heuristics(chunk)
+    if not chunks:
+        return []
 
-        if heuristic_label is not None:
-            log_chunk_decision(chunk, "HEURISTIC", heuristic_label, 1.0, "Heuristic rule matched")
-            result = {
-                "label": heuristic_label,
-                "confidence": 1.0,
-                "reasoning": "Classified by heuristic rule.",
-                "flagged_for_review": False,
-            }
-        elif not has_signal_nouns(chunk.get("cleaned_text", "")):
-            # no signal nouns present — noise without LLM call
-            log_chunk_decision(chunk, "DOMAIN_GATE", "noise", 1.0, "No signal nouns found")
-            result = {
-                "label": "noise",
-                "confidence": 1.0,
-                "reasoning": "No project-relevant domain terms detected.",
-                "flagged_for_review": False,
-            }
-        else:
-            # Step 2: LLM
-            result = classify_with_llm(chunk, client)
-            # Step 3: confidence threshold
-            result = apply_confidence_threshold(result)
-            log_chunk_decision(chunk, "LLM", result["label"], result["confidence"], result["reasoning"])
-
-        classified = ClassifiedChunk(
-            source_ref=chunk.get("source_ref", ""),
-            speaker=chunk.get("speaker"),
-            raw_text=chunk.get("raw_text", ""),
-            cleaned_text=chunk.get("cleaned_text", ""),
-            label=SignalLabel(result["label"]),
-            confidence=result["confidence"],
-            reasoning=result["reasoning"],
-            flagged_for_review=result.get("flagged_for_review", False),
-        )
-        results.append(classified)
-
-        # Polite rate limiting: Groq is very fast, but let's be safe
-        if heuristic_label is None:
-            time.sleep(0.2) 
-
-        if (i + 1) % 10 == 0:
-            print(f"  Classified {i + 1}/{len(chunks)} chunks...")
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # We use map to maintain order
+        results = list(executor.map(lambda c: _process_single_chunk(c, client, counter_info), chunks))
 
     return results
