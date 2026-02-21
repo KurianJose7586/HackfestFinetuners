@@ -145,7 +145,7 @@ def main():
     print("Writing chunks to AKS Database...")
     store_chunks(classified)
     print(f"  → Done. Stored {len(classified)} chunks to DB for session {session_id}\n")
-    print(f"To run the BRD generation, switch to the 'brd Module' folder and run:\n  python main.py {session_id}\n")
+    print(f"To run the BRD generation, switch to the 'brd_module' folder and run:\n  python main.py {session_id}\n")
     # --- End Integration Point ---
 
     print_pipeline_breakdown(classified)

@@ -4,7 +4,7 @@ Compiles the latest version of all BRD sections into a single Markdown document,
 including a section for Validation Flags. Supports Markdown, PDF, and DOCX export
 with template-based formatting for DOCX.
 """
-from storage import get_latest_brd_sections, get_connection
+from brd_module.storage import get_latest_brd_sections, get_connection
 from datetime import datetime, timezone
 import markdown
 import re
@@ -14,7 +14,9 @@ from io import BytesIO
 try:
     from weasyprint import HTML, CSS
     WEASYPRINT_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError):
+    # OSError occurs on Windows when native GLib/Pango DLLs are missing.
+    # PDF export will be unavailable but all other endpoints still work.
     WEASYPRINT_AVAILABLE = False
 
 try:

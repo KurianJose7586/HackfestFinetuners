@@ -11,10 +11,11 @@ Exported Functions:
 - export_pdf(session_id, title) -> bytes
 - export_docx(session_id, title, template_path) -> bytes
 """
-
-from brd_pipeline import run_brd_generation
-from validator import validate_brd
-from exporter import export_brd, export_brd_to_pdf, export_brd_to_docx
+import sys
+import os
+from brd_module.brd_pipeline import run_brd_generation
+from brd_module.validator import validate_brd
+from brd_module.exporter import export_brd, export_brd_to_pdf, export_brd_to_docx
 
 
 def generate_brd(session_id: str) -> dict:

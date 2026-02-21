@@ -15,8 +15,8 @@ from groq import Groq
 _HERE = Path(__file__).parent
 load_dotenv(_HERE / ".env")
 
-from storage import get_latest_brd_sections, get_connection
-from brd_pipeline import call_llm_with_retry
+from brd_module.storage import get_latest_brd_sections, get_connection
+from brd_module.brd_pipeline import call_llm_with_retry
 
 def store_validation_flag(session_id: str, section_name: str, flag_type: str, description: str, severity: str):
     conn = get_connection()

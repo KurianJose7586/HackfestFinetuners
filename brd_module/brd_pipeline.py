@@ -17,7 +17,7 @@ _HERE = Path(__file__).parent
 load_dotenv(_HERE / ".env")
 
 from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
-from storage import create_snapshot, get_signals_for_snapshot, store_brd_section
+from brd_module.storage import create_snapshot, get_signals_for_snapshot, store_brd_section
 
 def call_llm_with_retry(client: Groq, messages: List[Dict[str, str]], json_mode: bool = False) -> str:
     """Rate limit handler reusing the exact same retry logic from classifier.py."""
@@ -316,7 +316,7 @@ def executive_summary_agent(session_id: str, snapshot_id: str, client: Groq = No
         client = Groq(api_key=os.environ.get("GROQ_CLOUD_API", ""))
         
     # We need to import this here if it's newly added to storage
-    from storage import get_latest_brd_sections
+    from brd_module.storage import get_latest_brd_sections
     
     sections = get_latest_brd_sections(session_id)
     all_signals = get_signals_for_snapshot(snapshot_id)

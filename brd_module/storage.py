@@ -265,7 +265,7 @@ def get_signals_for_snapshot(snapshot_id: str, label_filter: str = None) -> List
         conn.close()
     return results
 
-def store_brd_section(session_id: str, snapshot_id: str, section_name: str, content: str, source_chunk_ids: List[str]):
+def store_brd_section(session_id: str, snapshot_id: str, section_name: str, content: str, source_chunk_ids: List[str], human_edited: bool = False):
     """Stores a generated BRD section with automatic version incrementing."""
     conn = get_connection()
     try:
@@ -283,9 +283,9 @@ def store_brd_section(session_id: str, snapshot_id: str, section_name: str, cont
             cur.execute("""
                 INSERT INTO brd_sections (
                     section_id, session_id, snapshot_id, section_name, 
-                    version_number, content, source_chunk_ids, generated_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (section_id, session_id, snapshot_id, section_name, version_number, content, json.dumps(source_chunk_ids), datetime.now(timezone.utc)))
+                    version_number, content, source_chunk_ids, human_edited, generated_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (section_id, session_id, snapshot_id, section_name, version_number, content, json.dumps(source_chunk_ids), human_edited, datetime.now(timezone.utc)))
         conn.commit()
     finally:
         conn.close()

@@ -246,9 +246,9 @@ def apply_confidence_threshold(result: dict) -> dict:
     confidence = result["confidence"]
     result["flagged_for_review"] = False
 
-    if confidence >= 0.75:
+    if confidence >= 0.90:
         pass  # auto-accept
-    elif confidence >= 0.65:
+    elif confidence >= 0.70:
         result["flagged_for_review"] = True
     else:
         result["label"] = "noise"
