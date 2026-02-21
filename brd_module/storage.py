@@ -12,7 +12,7 @@ from typing import List
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from schema import ClassifiedChunk, SignalLabel
+from .schema import ClassifiedChunk, SignalLabel
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -214,11 +214,10 @@ def restore_noise_item(chunk_id: str):
     Manually restores a misclassified noise chunk back to an active signal.
     Updates both the indexed columns and the JSONB payload.
     """
-    conn = get_connection()
+    conn, db_type = get_connection()
     try:
-        with conn.cursor() as cur:
-            # We must update the index columns AND the JSONB data to keep them in sync.
-            cur.execute("""
+        if db_type == "postgres":
+            query = """
                 UPDATE classified_chunks
                 SET suppressed = FALSE,
                     manually_restored = TRUE,
@@ -227,8 +226,14 @@ def restore_noise_item(chunk_id: str):
                         '{manually_restored}', 'true'::jsonb
                     )
                 WHERE chunk_id = %s;
-            """, (chunk_id,))
-        conn.commit()
+            """
+        else:
+            query = """
+                UPDATE classified_chunks
+                SET suppressed = 0, manually_restored = 1
+                WHERE chunk_id = ?
+            """
+        execute_query(conn, db_type, query, params=(chunk_id,))
     finally:
         conn.close()
 
@@ -241,14 +246,10 @@ def create_snapshot(session_id: str) -> str:
     active_signals = get_active_signals(session_id=session_id)
     chunk_ids = [c.chunk_id for c in active_signals]
     
-    conn = get_connection()
+    conn, db_type = get_connection()
     try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO brd_snapshots (snapshot_id, session_id, created_at, chunk_ids)
-                VALUES (%s, %s, %s, %s)
-            """, (snapshot_id, session_id, datetime.now(timezone.utc), json.dumps(chunk_ids)))
-        conn.commit()
+        query = "INSERT INTO brd_snapshots (snapshot_id, session_id, created_at, chunk_ids) VALUES (%s, %s, %s, %s)"
+        execute_query(conn, db_type, query, params=(snapshot_id, session_id, datetime.now(timezone.utc).isoformat(), json.dumps(chunk_ids)))
     finally:
         conn.close()
         
@@ -259,75 +260,65 @@ def get_signals_for_snapshot(snapshot_id: str, label_filter: str = None) -> List
     Queries AKS for chunks whose IDs are in the snapshot's chunk_ids array,
     optionally filtered by label.
     """
-    conn = get_connection()
+    conn, db_type = get_connection()
     results = []
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT chunk_ids FROM brd_snapshots WHERE snapshot_id = %s", (snapshot_id,))
-            row = cur.fetchone()
-            if not row or not row['chunk_ids']:
-                return []
-                
-            chunk_ids = row['chunk_ids']
-            if not chunk_ids:
-                return []
-                
-            query = "SELECT data FROM classified_chunks WHERE chunk_id = ANY(%s::uuid[])"
-            params = [chunk_ids]
+        rows = execute_query(conn, db_type, "SELECT chunk_ids FROM brd_snapshots WHERE snapshot_id = %s", params=(snapshot_id,), fetch=True)
+        if not rows or not rows[0]['chunk_ids']:
+            return []
             
-            if label_filter:
-                query += " AND label = %s"
-                params.append(label_filter)
-                
-            cur.execute(query, params)
-            rows = cur.fetchall()
-            for r in rows:
-                results.append(ClassifiedChunk.model_validate(r['data']))
+        chunk_ids_raw = rows[0]['chunk_ids']
+        chunk_ids = json.loads(chunk_ids_raw) if isinstance(chunk_ids_raw, str) else chunk_ids_raw
+        if not chunk_ids:
+            return []
+        
+        # Fetch matching chunks using IN clause (works for both PG and SQLite)
+        placeholders = ",".join(["%s"] * len(chunk_ids))
+        query = f"SELECT data FROM classified_chunks WHERE chunk_id IN ({placeholders})"
+        params = list(chunk_ids)
+        
+        if label_filter:
+            query += " AND label = %s"
+            params.append(label_filter)
+            
+        chunk_rows = execute_query(conn, db_type, query, params=params, fetch=True)
+        for r in chunk_rows:
+            results.append(ClassifiedChunk.model_validate(json.loads(r['data']) if isinstance(r['data'], str) else r['data']))
     finally:
         conn.close()
     return results
 
 def store_brd_section(session_id: str, snapshot_id: str, section_name: str, content: str, source_chunk_ids: List[str], human_edited: bool = False):
     """Stores a generated BRD section with automatic version incrementing."""
-    conn = get_connection()
+    conn, db_type = get_connection()
     try:
-        with conn.cursor() as cur:
-            # Get next version number
-            cur.execute("""
-                SELECT COALESCE(MAX(version_number), 0) + 1 
-                FROM brd_sections 
-                WHERE session_id = %s AND section_name = %s
-            """, (session_id, section_name))
-            version_row = cur.fetchone()
-            version_number = version_row[0] if version_row else 1
-            
-            section_id = str(uuid.uuid4())
-            cur.execute("""
-                INSERT INTO brd_sections (
-                    section_id, session_id, snapshot_id, section_name, 
-                    version_number, content, source_chunk_ids, human_edited, generated_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (section_id, session_id, snapshot_id, section_name, version_number, content, json.dumps(source_chunk_ids), human_edited, datetime.now(timezone.utc)))
-        conn.commit()
+        # Get next version number
+        version_rows = execute_query(conn, db_type,
+            "SELECT COALESCE(MAX(version_number), 0) + 1 FROM brd_sections WHERE session_id = %s AND section_name = %s",
+            params=(session_id, section_name), fetch=True)
+        version_number = list(version_rows[0].values())[0] if version_rows else 1
+        
+        section_id = str(uuid.uuid4())
+        execute_query(conn, db_type, """
+            INSERT INTO brd_sections (
+                section_id, session_id, snapshot_id, section_name, 
+                version_number, content, source_chunk_ids, human_edited, generated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, params=(section_id, session_id, snapshot_id, section_name, version_number, content, json.dumps(source_chunk_ids), human_edited, datetime.now(timezone.utc).isoformat()))
     finally:
         conn.close()
 
 def get_latest_brd_sections(session_id: str) -> Dict[str, str]:
     """Returns the latest generated content for each section name in a session."""
-    conn = get_connection()
+    conn, db_type = get_connection()
     sections = {}
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT section_name, content 
-                FROM brd_sections 
-                WHERE session_id = %s
-                ORDER BY version_number DESC
-            """, (session_id,))
-            rows = cur.fetchall()
-            for r in rows:
-                if r['section_name'] not in sections:
-                    sections[r['section_name']] = r['content']
+        rows = execute_query(conn, db_type,
+            "SELECT section_name, content FROM brd_sections WHERE session_id = %s ORDER BY version_number DESC",
+            params=(session_id,), fetch=True)
+        for r in rows:
+            if r['section_name'] not in sections:
+                sections[r['section_name']] = r['content']
     finally:
         conn.close()
     return sections

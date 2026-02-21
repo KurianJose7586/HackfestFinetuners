@@ -19,16 +19,15 @@ from brd_module.storage import get_latest_brd_sections, get_connection
 from brd_module.brd_pipeline import call_llm_with_retry
 
 def store_validation_flag(session_id: str, section_name: str, flag_type: str, description: str, severity: str):
-    conn = get_connection()
+    from brd_module.storage import execute_query
+    conn, db_type = get_connection()
     try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO brd_validation_flags (
-                    flag_id, session_id, section_name, flag_type, 
-                    description, severity, auto_resolvable, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (str(uuid.uuid4()), session_id, section_name, flag_type, description, severity, False, datetime.now(timezone.utc)))
-        conn.commit()
+        execute_query(conn, db_type, """
+            INSERT INTO brd_validation_flags (
+                flag_id, session_id, section_name, flag_type, 
+                description, severity, auto_resolvable, created_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, params=(str(uuid.uuid4()), session_id, section_name, flag_type, description, severity, False, datetime.now(timezone.utc).isoformat()))
     finally:
         conn.close()
 

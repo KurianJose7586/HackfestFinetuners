@@ -12,7 +12,7 @@ sys.path.append(PROJECT_ROOT)
 from brd_module.brd_pipeline import run_brd_generation
 from brd_module.validator import validate_brd
 from brd_module.exporter import export_brd, export_brd_to_docx
-from brd_module.storage import get_latest_brd_sections, store_brd_section, get_connection
+from brd_module.storage import get_latest_brd_sections, store_brd_section, get_connection, execute_query
 
 router = APIRouter(
     prefix="/sessions/{session_id}/brd",
@@ -194,23 +194,19 @@ def get_brd(session_id: str, format: str = "html"):
             )
         sections = html_sections
 
-    conn = get_connection()
+    conn, db_type = get_connection()
     flags = []
     try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT section_name, flag_type, severity, description 
-                FROM brd_validation_flags 
-                WHERE session_id = %s
-                ORDER BY severity DESC
-            """, (session_id,))
-            for r in cur.fetchall():
-                flags.append({
-                    "section_name": r[0],
-                    "flag_type": r[1],
-                    "severity": r[2],
-                    "description": r[3]
-                })
+        rows = execute_query(conn, db_type,
+            "SELECT section_name, flag_type, severity, description FROM brd_validation_flags WHERE session_id = %s ORDER BY severity DESC",
+            params=(session_id,), fetch=True) or []
+        for r in rows:
+            flags.append({
+                "section_name": r['section_name'],
+                "flag_type": r['flag_type'],
+                "severity": r['severity'],
+                "description": r['description']
+            })
     except Exception:
         pass
     finally:

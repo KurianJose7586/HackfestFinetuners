@@ -4,7 +4,7 @@ Compiles the latest version of all BRD sections into a single Markdown document,
 including a section for Validation Flags. Supports Markdown, PDF, and DOCX export
 with template-based formatting for DOCX.
 """
-from brd_module.storage import get_latest_brd_sections, get_connection
+from brd_module.storage import get_latest_brd_sections, get_connection, execute_query
 from datetime import datetime, timezone
 import markdown
 import re
@@ -52,17 +52,13 @@ def export_brd(session_id: str, title: str = "Business Requirements Document") -
     doc.append("---\n")
     
     # 1. Fetch Validation Flags
-    conn = get_connection()
+    conn, db_type = get_connection()
     flags = []
     try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT section_name, flag_type, severity, description 
-                FROM brd_validation_flags 
-                WHERE session_id = %s
-                ORDER BY severity DESC
-            """, (session_id,))
-            flags = cur.fetchall()
+        rows = execute_query(conn, db_type,
+            "SELECT section_name, flag_type, severity, description FROM brd_validation_flags WHERE session_id = %s ORDER BY severity DESC",
+            params=(session_id,), fetch=True) or []
+        flags = [(r['section_name'], r['flag_type'], r['severity'], r['description']) for r in rows]
     except Exception as e:
         doc.append(f"> **Warning:** Could not fetch validation flags: {e}\n")
     finally:
