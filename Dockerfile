@@ -1,13 +1,13 @@
-# Use an official Python runtime as a parent image
+# ---------- Base Image ----------
 FROM python:3.11-slim
 
-# Set the working directory in the container
+# ---------- Environment ----------
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
 WORKDIR /app
 
-# Install system dependencies
-# These are required for WeasyPrint, PostgreSQL, and PDF processing
-# Install system dependencies
-# These are required for WeasyPrint, PostgreSQL, and PDF processing
+# ---------- System Dependencies ----------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -22,27 +22,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxslt1-dev \
     libjpeg62-turbo-dev \
     zlib1g-dev \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file into the container at /app
+# ---------- Install Python Dependencies ----------
 COPY requirements-full.txt .
-
-# Install any needed packages specified in requirements-full.txt
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements-full.txt
 
-# Copy the rest of the application code into the container at /app
+# ---------- Copy Application ----------
 COPY . .
 
-# Expose the port the app runs on
-# Cloud Run uses the PORT environment variable, usually 8080
-EXPOSE ${PORT}
+# Cloud Run requires fixed port exposure
+EXPOSE 8080
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PORT=${PORT}
-
-# Command to run the application
-# Use the PORT environment variable provided by Cloud Run, falling back to 8080
-CMD uvicorn api.main:app --host 0.0.0.0 --port ${PORT}
+# ---------- Production Server ----------
+# IMPORTANT: Do NOT hardcode PORT.
+# Cloud Run injects it automatically.
+CMD exec gunicorn -k uvicorn.workers.UvicornWorker \
+    api.main:app \
+    --bind 0.0.0.0:$PORT \
+    --workers 1 \
+    --timeout 0
