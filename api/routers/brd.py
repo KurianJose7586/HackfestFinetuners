@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any
+import markdown
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(PROJECT_ROOT)
@@ -21,6 +22,140 @@ router = APIRouter(
 class EditSectionRequest(BaseModel):
     content: str
     snapshot_id: str
+
+# CSS stylesheet for HTML rendering
+BRD_HTML_STYLES = """
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+.brd-section {
+    background-color: white;
+    margin-bottom: 30px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    border-bottom: 3px solid #0066cc;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: #0066cc;
+    font-size: 2.2em;
+    margin-top: 0;
+}
+
+h2 {
+    color: #0066cc;
+    font-size: 1.8em;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+h3 {
+    color: #0099ff;
+    font-size: 1.4em;
+    margin-top: 20px;
+    margin-bottom: 12px;
+}
+
+h4, h5, h6 {
+    color: #333;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+p {
+    margin-bottom: 12px;
+}
+
+ul, ol {
+    margin-bottom: 15px;
+    padding-left: 30px;
+}
+
+li {
+    margin-bottom: 8px;
+}
+
+code {
+    background-color: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "Courier New", monospace;
+    color: #d63384;
+}
+
+pre {
+    background-color: #f4f4f4;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 15px;
+}
+
+pre code {
+    color: #000;
+    padding: 0;
+}
+
+blockquote {
+    border-left: 4px solid #0066cc;
+    padding-left: 15px;
+    margin: 0 0 15px 0;
+    color: #666;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+table th {
+    background-color: #0066cc;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+
+table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+}
+
+table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.flag-warning {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.flag-error {
+    background-color: #f8d7da;
+    border-left: 4px solid #dc3545;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+</style>
+"""
 
 @router.post("/generate")
 def generate_brd(session_id: str):
@@ -40,11 +175,24 @@ def generate_brd(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/")
-def get_brd(session_id: str):
+def get_brd(session_id: str, format: str = "html"):
     """
     Retrieve the latest generated BRD sections and validation flags.
+    
+    - format=html (default) → returns sections as HTML with proper styling
+    - format=markdown → returns raw markdown content
     """
     sections = get_latest_brd_sections(session_id)
+    
+    # Convert markdown to HTML if requested
+    if format.lower() == "html":
+        html_sections = {}
+        for section_name, content in sections.items():
+            html_sections[section_name] = markdown.markdown(
+                content,
+                extensions=['tables', 'fenced_code', 'toc']
+            )
+        sections = html_sections
 
     conn = get_connection()
     flags = []
@@ -68,7 +216,12 @@ def get_brd(session_id: str):
     finally:
         conn.close()
 
-    return {"session_id": session_id, "sections": sections, "flags": flags}
+    return {
+        "session_id": session_id,
+        "format": format.lower(),
+        "sections": sections,
+        "flags": flags
+    }
 
 @router.put("/sections/{section_name}")
 def edit_brd_section(session_id: str, section_name: str, body: EditSectionRequest):
@@ -94,10 +247,46 @@ def export_brd_document(session_id: str, format: str = "markdown"):
     Export the compiled BRD document as a downloadable file.
     
     - format=markdown → returns .md file as text/plain download
+    - format=html     → returns .html file with styling
     - format=docx     → returns .docx binary (requires python-docx)
     """
     try:
-        if format == "docx":
+        sections = get_latest_brd_sections(session_id)
+        
+        if format == "html":
+            # Build HTML with embedded styles
+            html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRD - {session_id}</title>
+    {BRD_HTML_STYLES}
+</head>
+<body>
+    <h1>Business Requirements Document</h1>
+    <p><strong>Session ID:</strong> {session_id}</p>
+    <hr style="margin: 30px 0; border: none; border-top: 2px solid #ddd;">
+"""
+            for section_name, content in sections.items():
+                html_content += f'''
+    <div class="brd-section">
+        <div class="section-title"><h2>{section_name.replace("_", " ").title()}</h2></div>
+        {markdown.markdown(content, extensions=['tables', 'fenced_code', 'toc'])}
+    </div>
+'''
+            html_content += """
+</body>
+</html>
+"""
+            return Response(
+                content=html_content.encode("utf-8"),
+                media_type="text/html",
+                headers={
+                    "Content-Disposition": f"attachment; filename=brd_{session_id}.html"
+                }
+            )
+        elif format == "docx":
             docx_bytes = export_brd_to_docx(session_id)
             return Response(
                 content=docx_bytes,
@@ -108,9 +297,9 @@ def export_brd_document(session_id: str, format: str = "markdown"):
             )
         else:
             # Default: Markdown as a downloadable text file
-            markdown = export_brd(session_id)
+            markdown_content = export_brd(session_id)
             return Response(
-                content=markdown.encode("utf-8"),
+                content=markdown_content.encode("utf-8"),
                 media_type="text/plain",
                 headers={
                     "Content-Disposition": f"attachment; filename=brd_{session_id}.md"
