@@ -4,14 +4,24 @@ from fastapi.middleware.cors import CORSMiddleware
 import sys
 
 # Add the parent directory and nested modules so we can import them
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
 
-from .routers import sessions, ingest, review, brd
-from brd_module.storage import init_db
+try:
+    from api.routers import sessions, ingest, review, brd
+except ImportError:
+    from routers import sessions, ingest, review, brd
+
+try:
+    from brd_module.storage import init_db
+except ImportError:
+    print("Warning: Could not import brd_module.storage")
 
 # Initialize database (PG or SQLite fallback) on startup
 try:
     init_db()
+except NameError:
+    print("Warning: Database initialization skipped (init_db not available)")
 except Exception as e:
     print(f"Warning: Database initialization failed: {e}")
 

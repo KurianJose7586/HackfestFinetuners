@@ -214,7 +214,7 @@ def restore_noise_item(chunk_id: str):
     Manually restores a misclassified noise chunk back to an active signal.
     Updates both the indexed columns and the JSONB payload.
     """
-    conn = get_connection()
+    conn, db_type = get_connection()
     try:
         with conn.cursor() as cur:
             # We must update the index columns AND the JSONB data to keep them in sync.
@@ -241,7 +241,7 @@ def create_snapshot(session_id: str) -> str:
     active_signals = get_active_signals(session_id=session_id)
     chunk_ids = [c.chunk_id for c in active_signals]
     
-    conn = get_connection()
+    conn, db_type = get_connection()
     try:
         with conn.cursor() as cur:
             cur.execute("""
@@ -259,7 +259,7 @@ def get_signals_for_snapshot(snapshot_id: str, label_filter: str = None) -> List
     Queries AKS for chunks whose IDs are in the snapshot's chunk_ids array,
     optionally filtered by label.
     """
-    conn = get_connection()
+    conn, db_type = get_connection()
     results = []
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -289,7 +289,7 @@ def get_signals_for_snapshot(snapshot_id: str, label_filter: str = None) -> List
 
 def store_brd_section(session_id: str, snapshot_id: str, section_name: str, content: str, source_chunk_ids: List[str], human_edited: bool = False):
     """Stores a generated BRD section with automatic version incrementing."""
-    conn = get_connection()
+    conn, db_type = get_connection()
     try:
         with conn.cursor() as cur:
             # Get next version number
