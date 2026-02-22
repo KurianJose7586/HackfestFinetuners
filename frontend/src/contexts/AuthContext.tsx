@@ -33,6 +33,7 @@ interface AuthContextValue {
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
     signup: (email: string, password: string, name: string) => Promise<void>;
+    loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
     clearError: () => void;
@@ -60,6 +61,8 @@ function mapFirebaseError(error: AuthError): string {
             return 'Too many attempts. Please try again later.';
         case 'auth/network-request-failed':
             return 'Network error. Check your internet connection.';
+        case 'auth/popup-closed-by-user':
+            return 'Sign in cancelled.';
         default:
             return 'Something went wrong. Please try again.';
     }
@@ -150,6 +153,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const loginWithGoogle = async () => {
+        setError(null);
+        try {
+            const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            // Check if user document exists in Firestore, if not create it
+            const { getUser, createUser } = await import('@/lib/firestore/users');
+            const existingUser = await getUser(user.uid);
+            if (!existingUser) {
+                await createUser(user.uid, {
+                    name: user.displayName || 'Google User',
+                    email: user.email || '',
+                    photoURL: user.photoURL || '',
+                });
+            }
+        } catch (err) {
+            const msg = mapFirebaseError(err as AuthError);
+            setError(msg);
+            throw new Error(msg);
+        }
+    };
+
     const logout = async () => {
         setError(null);
         await signOut(auth);
@@ -172,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, loading, error, login, signup, logout, resetPassword, clearError }}
+            value={{ user, loading, error, login, signup, loginWithGoogle, logout, resetPassword, clearError }}
         >
             {children}
         </AuthContext.Provider>
