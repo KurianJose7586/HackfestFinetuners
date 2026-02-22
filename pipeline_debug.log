@@ -1,1 +1,1063 @@
 # pipeline_debug.log cleared after merge conflict resolution
+2026-02-22 01:49:13,999 | load_ssl_context verify=True cert=None trust_env=True http2=False
+2026-02-22 01:49:14,003 | load_verify_locations cafile='C:\\Users\\preet\\AppData\\Roaming\\Python\\Python313\\site-packages\\certifi\\cacert.pem'
+2026-02-22 01:49:14,867 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:00:30
+TEXT: Right, so we need to build a new remote control that's better than existing products. The key is to differentiate on user interface and battery life.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,868 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:01:00
+TEXT: I think we should focus on ergonomics first. The existing remotes are uncomfortable to hold for extended periods. Users need a design that fits natura
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,868 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:01:20
+TEXT: The interface is critical. We need a clear menu system with large buttons for older users. And we definitely need voice control support.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,868 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:02:00
+TEXT: Agreed. Let's set the deadline for the first prototype to next Friday. That gives us one week to mockup the design.
+LABEL: timeline_reference
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,868 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2002a:00:02:20
+TEXT: From a market perspective, battery life is a huge selling point. Customers are frustrated with remotes that need new batteries every month.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,869 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:02:40
+TEXT: So what's the target battery life? One year? Two years?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,869 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:02:55
+TEXT: Let's aim for 18 months with normal use. That's a market differentiator.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,869 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:03:15
+TEXT: What about Bluetooth connectivity? Should we include that?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:49:14,869 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2002a:00:03:30
+TEXT: Yes, but the decision is whether to support both IR and Bluetooth or Bluetooth only.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,869 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:03:50
+TEXT: I think we go with dual support for backward compatibility. IR is still used in many homes.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:49:14,869 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:04:10
+TEXT: Okay, let me summarize. So we need: ergonomic design, 18-month battery life, dual IR and Bluetooth, voice control. Does everyone agree?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,870 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:04:35
+TEXT: I'd also add that we need to consider accessibility. Large text options, high contrast mode for vision impaired users.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,870 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:04:55
+TEXT: Good point. Let's include that in the accessibility requirements. Deadline for first mockup is Friday.
+LABEL: timeline_reference
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,870 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:00:15
+TEXT: I've prepared three color options: matte black, silver metallic, and graphite. Which do you prefer?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,870 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2003b:00:00:35
+TEXT: Market research shows that black is the most popular. It matches modern TVs and looks premium.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,870 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2003b:00:00:55
+TEXT: I disagree with that. Silver looks more modern and stands out less against the TV. Plus it shows dirt less.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,870 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:01:15
+TEXT: What if we do black as primary with silver accents around the buttons?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,871 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2003b:00:01:30
+TEXT: That's a good compromise. Let's prototype that. Now, about the button layout.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:49:14,871 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IMG
+SOURCE: AMI_ES2003b:00:01:50
+TEXT: I think we should go minimalist. Only the essential buttons: power, volume, channel, and the voice button. Advanced users can use the app for more fea
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,871 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2003b:00:02:15
+TEXT: But that might frustrate power users. Some people want quick access to RGB color control and input switching. That's pretty common.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,871 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:02:40
+TEXT: What if we have a minimalist mode and an advanced mode? Users can switch between them by holding the menu button for 3 seconds.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,871 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2003b:00:03:05
+TEXT: I like that. That way we get the best of both worlds. Minimalist at first glance, but powerful for advanced users.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,871 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2003b:00:03:25
+TEXT: Okay, so decision made: black with silver accents, minimalist primary layout with advanced mode hidden behind a gesture.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,871 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:00:10
+TEXT: Alright, let's nail down the technical specs. What processor are we looking at?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:49:14,872 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:00:25
+TEXT: For low power consumption, I'd recommend an ARM Cortex M4. It's efficient and powerful enough for our needs. Costs about $2 per unit.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,872 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2004c:00:00:50
+TEXT: Can it handle machine learning for context-aware suggestions? We want to learn which buttons the user presses most frequently.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,872 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:01:10
+TEXT: Cortex M4 could do basic ML, but it might drain the battery. Let me think about that. We'd need to profile the impact.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,872 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:01:30
+TEXT: Let's make that an optional feature for a future version. For now, focus on the core functionality.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,872 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2004c:00:01:50
+TEXT: What about battery type? AA? AAA? Proprietary?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,872 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:02:05
+TEXT: I recommend two AA lithium batteries. They provide good power density, are standardized, and users can easily replace them.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,872 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: MA
+SOURCE: AMI_ES2004c:00:02:25
+TEXT: What about wireless range? Do we support 2.4 GHz WiFi in addition to Bluetooth?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:49:14,873 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:02:45
+TEXT: WiFi would significantly impact battery life. I recommend sticking with Bluetooth 5.0, which has a range of about 100 meters.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,873 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:03:10
+TEXT: Okay, let's document these decisions. Cortex M4, AA lithium batteries, Bluetooth 5.0 plus IR fallback.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,873 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2004c:00:03:30
+TEXT: And we need a motion sensor for wake-on-motion to reduce power draw when not in use.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:14,873 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:03:50
+TEXT: Good idea. An accelerometer costs $1 and would let us only activate the radio when the user picks up the remote.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:49:24,102 | load_ssl_context verify=True cert=None trust_env=True http2=False
+2026-02-22 01:49:24,103 | load_verify_locations cafile='C:\\Users\\preet\\AppData\\Roaming\\Python\\Python313\\site-packages\\certifi\\cacert.pem'
+2026-02-22 01:52:23,053 | load_ssl_context verify=True cert=None trust_env=True http2=False
+2026-02-22 01:52:23,057 | load_verify_locations cafile='C:\\Users\\preet\\AppData\\Roaming\\Python\\Python313\\site-packages\\certifi\\cacert.pem'
+2026-02-22 01:52:23,695 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:00:30
+TEXT: Right, so we need to build a new remote control that's better than existing products. The key is to differentiate on user interface and battery life.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,695 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:01:00
+TEXT: I think we should focus on ergonomics first. The existing remotes are uncomfortable to hold for extended periods. Users need a design that fits natura
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,695 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:01:20
+TEXT: The interface is critical. We need a clear menu system with large buttons for older users. And we definitely need voice control support.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,696 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:02:00
+TEXT: Agreed. Let's set the deadline for the first prototype to next Friday. That gives us one week to mockup the design.
+LABEL: timeline_reference
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,696 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2002a:00:02:20
+TEXT: From a market perspective, battery life is a huge selling point. Customers are frustrated with remotes that need new batteries every month.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,696 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:02:40
+TEXT: So what's the target battery life? One year? Two years?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,696 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:02:55
+TEXT: Let's aim for 18 months with normal use. That's a market differentiator.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,696 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:03:15
+TEXT: What about Bluetooth connectivity? Should we include that?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:52:23,696 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2002a:00:03:30
+TEXT: Yes, but the decision is whether to support both IR and Bluetooth or Bluetooth only.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,697 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:03:50
+TEXT: I think we go with dual support for backward compatibility. IR is still used in many homes.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:52:23,697 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:04:10
+TEXT: Okay, let me summarize. So we need: ergonomic design, 18-month battery life, dual IR and Bluetooth, voice control. Does everyone agree?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,697 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:04:35
+TEXT: I'd also add that we need to consider accessibility. Large text options, high contrast mode for vision impaired users.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,697 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:04:55
+TEXT: Good point. Let's include that in the accessibility requirements. Deadline for first mockup is Friday.
+LABEL: timeline_reference
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,697 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:00:15
+TEXT: I've prepared three color options: matte black, silver metallic, and graphite. Which do you prefer?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,697 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2003b:00:00:35
+TEXT: Market research shows that black is the most popular. It matches modern TVs and looks premium.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2003b:00:00:55
+TEXT: I disagree with that. Silver looks more modern and stands out less against the TV. Plus it shows dirt less.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:01:15
+TEXT: What if we do black as primary with silver accents around the buttons?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2003b:00:01:30
+TEXT: That's a good compromise. Let's prototype that. Now, about the button layout.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IMG
+SOURCE: AMI_ES2003b:00:01:50
+TEXT: I think we should go minimalist. Only the essential buttons: power, volume, channel, and the voice button. Advanced users can use the app for more fea
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2003b:00:02:15
+TEXT: But that might frustrate power users. Some people want quick access to RGB color control and input switching. That's pretty common.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:02:40
+TEXT: What if we have a minimalist mode and an advanced mode? Users can switch between them by holding the menu button for 3 seconds.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2003b:00:03:05
+TEXT: I like that. That way we get the best of both worlds. Minimalist at first glance, but powerful for advanced users.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,698 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2003b:00:03:25
+TEXT: Okay, so decision made: black with silver accents, minimalist primary layout with advanced mode hidden behind a gesture.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,699 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:00:10
+TEXT: Alright, let's nail down the technical specs. What processor are we looking at?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:52:23,699 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:00:25
+TEXT: For low power consumption, I'd recommend an ARM Cortex M4. It's efficient and powerful enough for our needs. Costs about $2 per unit.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,699 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2004c:00:00:50
+TEXT: Can it handle machine learning for context-aware suggestions? We want to learn which buttons the user presses most frequently.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,699 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:01:10
+TEXT: Cortex M4 could do basic ML, but it might drain the battery. Let me think about that. We'd need to profile the impact.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,699 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:01:30
+TEXT: Let's make that an optional feature for a future version. For now, focus on the core functionality.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,699 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2004c:00:01:50
+TEXT: What about battery type? AA? AAA? Proprietary?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,700 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:02:05
+TEXT: I recommend two AA lithium batteries. They provide good power density, are standardized, and users can easily replace them.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,700 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: MA
+SOURCE: AMI_ES2004c:00:02:25
+TEXT: What about wireless range? Do we support 2.4 GHz WiFi in addition to Bluetooth?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:52:23,700 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:02:45
+TEXT: WiFi would significantly impact battery life. I recommend sticking with Bluetooth 5.0, which has a range of about 100 meters.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,700 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:03:10
+TEXT: Okay, let's document these decisions. Cortex M4, AA lithium batteries, Bluetooth 5.0 plus IR fallback.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,700 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2004c:00:03:30
+TEXT: And we need a motion sensor for wake-on-motion to reduce power draw when not in use.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:23,700 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:03:50
+TEXT: Good idea. An accelerometer costs $1 and would let us only activate the radio when the user picks up the remote.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:52:33,150 | load_ssl_context verify=True cert=None trust_env=True http2=False
+2026-02-22 01:52:33,151 | load_verify_locations cafile='C:\\Users\\preet\\AppData\\Roaming\\Python\\Python313\\site-packages\\certifi\\cacert.pem'
+2026-02-22 01:56:51,293 | load_ssl_context verify=True cert=None trust_env=True http2=False
+2026-02-22 01:56:51,297 | load_verify_locations cafile='C:\\Users\\preet\\AppData\\Roaming\\Python\\Python313\\site-packages\\certifi\\cacert.pem'
+2026-02-22 01:56:52,798 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:00:30
+TEXT: Right, so we need to build a new remote control that's better than existing products. The key is to differentiate on user interface and battery life.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,798 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:01:00
+TEXT: I think we should focus on ergonomics first. The existing remotes are uncomfortable to hold for extended periods. Users need a design that fits natura
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,798 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:01:20
+TEXT: The interface is critical. We need a clear menu system with large buttons for older users. And we definitely need voice control support.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,799 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:02:00
+TEXT: Agreed. Let's set the deadline for the first prototype to next Friday. That gives us one week to mockup the design.
+LABEL: timeline_reference
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,799 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2002a:00:02:20
+TEXT: From a market perspective, battery life is a huge selling point. Customers are frustrated with remotes that need new batteries every month.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,799 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:02:40
+TEXT: So what's the target battery life? One year? Two years?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,799 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:02:55
+TEXT: Let's aim for 18 months with normal use. That's a market differentiator.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,799 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:03:15
+TEXT: What about Bluetooth connectivity? Should we include that?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:56:52,799 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2002a:00:03:30
+TEXT: Yes, but the decision is whether to support both IR and Bluetooth or Bluetooth only.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,800 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:03:50
+TEXT: I think we go with dual support for backward compatibility. IR is still used in many homes.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:56:52,800 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2002a:00:04:10
+TEXT: Okay, let me summarize. So we need: ergonomic design, 18-month battery life, dual IR and Bluetooth, voice control. Does everyone agree?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,800 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2002a:00:04:35
+TEXT: I'd also add that we need to consider accessibility. Large text options, high contrast mode for vision impaired users.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,800 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2002a:00:04:55
+TEXT: Good point. Let's include that in the accessibility requirements. Deadline for first mockup is Friday.
+LABEL: timeline_reference
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,800 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:00:15
+TEXT: I've prepared three color options: matte black, silver metallic, and graphite. Which do you prefer?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,800 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2003b:00:00:35
+TEXT: Market research shows that black is the most popular. It matches modern TVs and looks premium.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,801 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2003b:00:00:55
+TEXT: I disagree with that. Silver looks more modern and stands out less against the TV. Plus it shows dirt less.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,801 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:01:15
+TEXT: What if we do black as primary with silver accents around the buttons?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,801 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2003b:00:01:30
+TEXT: That's a good compromise. Let's prototype that. Now, about the button layout.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:56:52,801 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IMG
+SOURCE: AMI_ES2003b:00:01:50
+TEXT: I think we should go minimalist. Only the essential buttons: power, volume, channel, and the voice button. Advanced users can use the app for more fea
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,801 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2003b:00:02:15
+TEXT: But that might frustrate power users. Some people want quick access to RGB color control and input switching. That's pretty common.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,801 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2003b:00:02:40
+TEXT: What if we have a minimalist mode and an advanced mode? Users can switch between them by holding the menu button for 3 seconds.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,802 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2003b:00:03:05
+TEXT: I like that. That way we get the best of both worlds. Minimalist at first glance, but powerful for advanced users.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,802 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2003b:00:03:25
+TEXT: Okay, so decision made: black with silver accents, minimalist primary layout with advanced mode hidden behind a gesture.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,802 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:00:10
+TEXT: Alright, let's nail down the technical specs. What processor are we looking at?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:56:52,802 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:00:25
+TEXT: For low power consumption, I'd recommend an ARM Cortex M4. It's efficient and powerful enough for our needs. Costs about $2 per unit.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,802 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: MA
+SOURCE: AMI_ES2004c:00:00:50
+TEXT: Can it handle machine learning for context-aware suggestions? We want to learn which buttons the user presses most frequently.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,802 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:01:10
+TEXT: Cortex M4 could do basic ML, but it might drain the battery. Let me think about that. We'd need to profile the impact.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,802 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:01:30
+TEXT: Let's make that an optional feature for a future version. For now, focus on the core functionality.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,803 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2004c:00:01:50
+TEXT: What about battery type? AA? AAA? Proprietary?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,803 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:02:05
+TEXT: I recommend two AA lithium batteries. They provide good power density, are standardized, and users can easily replace them.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,803 | 
+============================================================
+PATH: DOMAIN_GATE
+SPEAKER: MA
+SOURCE: AMI_ES2004c:00:02:25
+TEXT: What about wireless range? Do we support 2.4 GHz WiFi in addition to Bluetooth?
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: No project-relevant domain terms detected.
+============================================================
+2026-02-22 01:56:52,803 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:02:45
+TEXT: WiFi would significantly impact battery life. I recommend sticking with Bluetooth 5.0, which has a range of about 100 meters.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,803 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: PM1
+SOURCE: AMI_ES2004c:00:03:10
+TEXT: Okay, let's document these decisions. Cortex M4, AA lithium batteries, Bluetooth 5.0 plus IR fallback.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,803 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: ID
+SOURCE: AMI_ES2004c:00:03:30
+TEXT: And we need a motion sensor for wake-on-motion to reduce power draw when not in use.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:56:52,803 | 
+============================================================
+PATH: HEURISTIC
+SPEAKER: IM
+SOURCE: AMI_ES2004c:00:03:50
+TEXT: Good idea. An accelerometer costs $1 and would let us only activate the radio when the user picks up the remote.
+LABEL: noise
+CONFIDENCE: 1.0
+REASONING: Classified by heuristic rule.
+============================================================
+2026-02-22 01:57:02,399 | load_ssl_context verify=True cert=None trust_env=True http2=False
+2026-02-22 01:57:02,400 | load_verify_locations cafile='C:\\Users\\preet\\AppData\\Roaming\\Python\\Python313\\site-packages\\certifi\\cacert.pem'

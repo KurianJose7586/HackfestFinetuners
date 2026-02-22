@@ -10,13 +10,20 @@ from schema import ClassifiedChunk, SignalLabel
 
 def setup_module(module):
     """Ensure the table exists before any tests run, and clean it."""
-    # Temporarily rename connection items to make sure it doesn't collide
+    # Initialize database (creates tables if needed)
     init_db()
-    conn = get_connection()
+    
+    # Get connection and clean up data
+    conn, db_type = get_connection()
     try:
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE classified_chunks;")
-        conn.commit()
+        if db_type == "sqlite":
+            cur = conn.cursor()
+            cur.execute("DELETE FROM classified_chunks;")
+            conn.commit()
+        else:  # PostgreSQL
+            with conn.cursor() as cur:
+                cur.execute("TRUNCATE TABLE classified_chunks;")
+            conn.commit()
     finally:
         conn.close()
 
